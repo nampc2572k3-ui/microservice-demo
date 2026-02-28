@@ -1,0 +1,24 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /auth
+
+# db
+spring:
+  application:
+    name: identity-service
+  datasource:
+    url: "jdbc:mysql://${AUTH_DB_HOST}:${AUTH_DB_PORT}/${AUTH_MYSQL_DATABASE}?useSSL=false&serverTimezone=Asia/Ho_Chi_Minh"
+    driverClassName: "com.mysql.cj.jdbc.Driver"
+    username: dev
+    password: secure_root_password
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+  # jwt
+  jwt:
+    secret: ${JWT_SECRET}
+    access-token-expiration-ms: ${JWT_ACCESS_TOKEN_EXPIRATION_MS}
+    refresh-token-expiration-ms: ${JWT_REFRESH_TOKEN_EXPIRATION_MS}
