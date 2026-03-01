@@ -24,6 +24,8 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
+    private final CustomAuthorizationManager customAuthorizationManager;
+
     protected static final String[] PUBLIC_URLS = {
             "/api/v1/auth/**"
     };
@@ -57,8 +59,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(PUBLIC_URLS).permitAll()
-                        .requestMatchers("/api/v1/test").hasAuthority("USER")
-                        .anyRequest().authenticated()
+                        .anyRequest().access(customAuthorizationManager)
                 )
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint(customAuthenticationEntryPoint)

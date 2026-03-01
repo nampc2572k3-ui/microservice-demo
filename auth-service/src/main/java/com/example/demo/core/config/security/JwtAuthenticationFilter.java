@@ -14,10 +14,18 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.Set;
 
 @Slf4j
 @Component
@@ -25,8 +33,6 @@ import java.io.IOException;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtUtils jwtUtils;;
-    private final ResourceRepository resourceRepository;
-    private final AccountRepository accountRepository;
 
     @Override
     protected void doFilterInternal(
@@ -45,40 +51,38 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String token = authHeader.substring(7);
 
         try {
+
             String username = jwtUtils.extractUsername(token);
 
-            String method = request.getMethod();
-            String uri = request.getRequestURI();
+            if (username != null &&
+                    SecurityContextHolder.getContext().getAuthentication() == null) {
 
-            Resource resource = resourceRepository
-                    .findByHttpMethodAndPattern(method, uri);
+                Set<String> authoritiesFromToken =
+                        jwtUtils.extractAuthorities(token);
 
-            // If no resource mapping found, allow the filter chain to continue (or decide to block).
-            if (resource == null) {
-                log.debug("No resource mapping found for {} {}", method, uri);
-                filterChain.doFilter(request, response);
-                return;
-            }
+                List<SimpleGrantedAuthority> grantedAuthorities =
+                        authoritiesFromToken.stream()
+                                .map(SimpleGrantedAuthority::new)
+                                .toList();
 
-            Menu menu = resource.getMenu();
-            ActionType action = resource.getAction();
+                UsernamePasswordAuthenticationToken authToken =
+                        new UsernamePasswordAuthenticationToken(
+                                username,
+                                null,
+                                grantedAuthorities
+                        );
 
-            boolean allowed = accountRepository.existsByUsernameAndMenuIdAndPermission(
-                    username, menu.getId(), action.getValue()
-            );
+                authToken.setDetails(
+                        new WebAuthenticationDetailsSource()
+                                .buildDetails(request)
+                );
 
-            if (!allowed) {
-                // Deny access
-                response.setStatus(ErrorCode.USER_NOT_HAVE_PERMISSION.getCode());
-                response.getWriter().write(ErrorCode.USER_NOT_HAVE_PERMISSION.getMessage());
-                return;
+                SecurityContextHolder.getContext()
+                        .setAuthentication(authToken);
             }
 
         } catch (Exception ex) {
-            log.error("Error while validating JWT permissions", ex);
-            // On unexpected error, fail closed: return 401
-            response.setStatus(ErrorCode.SC_UNAUTHORIZED.getCode());
-            response.getWriter().write(ErrorCode.SC_UNAUTHORIZED.getMessage());
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             return;
         }
 
