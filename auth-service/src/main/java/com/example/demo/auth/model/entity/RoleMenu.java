@@ -7,7 +7,7 @@ import lombok.*;
 @Table(
         name = "role_menu",
         uniqueConstraints = {
-                @UniqueConstraint(columnNames = {"role_id", "menu_id", "action"})
+                @UniqueConstraint(columnNames = {"role_id", "menu_id", "permission"})
         }
 )
 @Getter
