@@ -19,10 +19,35 @@ public record UserDetailsImpl(Account account) implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return account.getRoles()
-                .stream()
-                .map(role -> new SimpleGrantedAuthority("ROLE_" + role.getName()))
-                .collect(Collectors.toSet());
+        Set<GrantedAuthority> roleAuthorities =
+                account.getRoles()
+                        .stream()
+                        .filter(Objects::nonNull)
+                        .map(role -> new SimpleGrantedAuthority("ROLE_" + role.getName()))
+                        .collect(Collectors.toSet());
+
+        Set<GrantedAuthority> resourceAuthorities =
+                account.getRoles()
+                        .stream()
+                        .filter(Objects::nonNull)
+                        .flatMap(role -> role.getRoleMenus().stream())
+                        .filter(Objects::nonNull)
+                        .flatMap(roleMenu -> {
+                            int permissionMask = roleMenu.getPermission();
+                            Menu menu = roleMenu.getMenu();
+                            if (menu == null) {
+                                return Stream.empty();
+                            }
+                            return Stream.of(ActionType.values())
+                                    .filter(action -> (permissionMask & action.getValue()) == action.getValue())
+                                    .map(action -> new SimpleGrantedAuthority(
+                                            "MENU_" + menu.getId() + "_" + action.getValue()
+                                    ));
+                        })
+                        .collect(Collectors.toSet());
+
+        roleAuthorities.addAll(resourceAuthorities);
+        return roleAuthorities;
     }
 
     @Override

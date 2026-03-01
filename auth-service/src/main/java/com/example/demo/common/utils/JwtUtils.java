@@ -10,16 +10,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import io.jsonwebtoken.security.Keys;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
-import java.util.Date;
-import java.util.Map;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -31,7 +29,7 @@ public class JwtUtils {
 
     private static final String CLAIM_TYPE = "type";
     private static final String CLAIM_ACCOUNT_ID = "accountId";
-    private static final String CLAIM_ROLE = "role";
+    private static final String CLAIM_AUTHORITIES = "authorities";
 
     @Value("${jwt.secret}")
     private String secretKey;
@@ -54,16 +52,21 @@ public class JwtUtils {
         return buildToken(userDetails, refreshTokenExpirationMs, "refresh");
     }
 
-    private String buildToken(UserDetails userDetails, long expirationMillis, String type) {
+    private String buildToken(UserDetails userDetails,
+                              long expirationMillis,
+                              String type) {
+
         UserDetailsImpl customUser = (UserDetailsImpl) userDetails;
+
+        Set<String> authorities = userDetails.getAuthorities()
+                .stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.toSet());
 
         Map<String, Object> claims = Map.of(
                 CLAIM_TYPE, type,
                 CLAIM_ACCOUNT_ID, customUser.account().getId(),
-                CLAIM_ROLE, customUser.account().getRoles()
-                                                    .stream()
-                                                    .map(Role::getName)
-                                                    .collect(Collectors.toSet())
+                CLAIM_AUTHORITIES, authorities
         );
 
         return Jwts.builder()
@@ -125,4 +128,13 @@ public class JwtUtils {
         var raw = extractClaim(token, claims -> claims.get(JwtUtils.CLAIM_TYPE));
         return Objects.toString(raw, null);
     }
+
+
+    public Set<String> extractAuthorities(String token) {
+        return new HashSet<>(
+                extractClaim(token,
+                        claims -> claims.get(CLAIM_AUTHORITIES, List.class))
+        );
+    }
+
 }
