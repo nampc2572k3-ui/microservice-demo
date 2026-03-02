@@ -5,7 +5,7 @@ import org.springframework.data.domain.Page;
 
 public class ResponseUtils {
 
-    private static final int SUCCESS_CODE = 0;
+    private static final int SUCCESS_CODE = 200;
 
     public static <T> BaseResponse<T> error(int errorCode, String message) {
         return build(false, null, message, errorCode);

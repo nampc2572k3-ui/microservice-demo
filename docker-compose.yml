@@ -17,4 +17,15 @@ services:
     ports:
       - "3303:3306"
 
+  # Redis
+  redis:
+    image: redis:7.0
+    container_name: microservice-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    env_file:
+      - .env
+    networks:
+      - app-network
 
