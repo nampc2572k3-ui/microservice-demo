@@ -1,4 +1,4 @@
-package com.example.demo.core.config.cache;
+package com.example.demo.core.config.cache.caffein;
 
 import com.github.benmanes.caffeine.cache.Caffeine;
 import org.springframework.cache.CacheManager;

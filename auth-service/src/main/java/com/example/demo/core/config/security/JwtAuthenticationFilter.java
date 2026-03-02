@@ -1,11 +1,6 @@
 package com.example.demo.core.config.security;
 
-import com.example.demo.auth.model.entity.Menu;
-import com.example.demo.auth.model.entity.Resource;
-import com.example.demo.auth.repository.AccountRepository;
-import com.example.demo.auth.repository.ResourceRepository;
-import com.example.demo.common.constant.ActionType;
-import com.example.demo.common.constant.ErrorCode;
+import com.example.demo.auth.service.cache.RedisBlacklistService;
 import com.example.demo.common.utils.JwtUtils;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -15,10 +10,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -32,7 +25,9 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    private final JwtUtils jwtUtils;;
+    private final JwtUtils jwtUtils;
+
+    private final RedisBlacklistService redisBlacklistService;
 
     @Override
     protected void doFilterInternal(
@@ -49,6 +44,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         String token = authHeader.substring(7);
+
+        if (redisBlacklistService.isBlacklisted(token)) {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.getWriter().write("Token has been revoked");
+            return;
+        }
 
         try {
 
@@ -83,6 +84,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         } catch (Exception ex) {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.getWriter().write("Unauthorized: " + ex.getMessage());
             return;
         }
 
