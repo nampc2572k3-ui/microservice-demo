@@ -13,7 +13,11 @@ public enum ErrorCode {
     AUTH_TOKEN_SIGNATURE_INVALID(401, "Token signature invalid"),
     USER_NOT_FOUND(404, "User not found"),
     USER_NOT_HAVE_PERMISSION(403, "User does not have permission to access this resource"),
-    SC_UNAUTHORIZED(401, "Unauthorized");
+    SC_UNAUTHORIZED(401, "Unauthorized"),
+    USER_ALREADY_EXISTS(409, "User already exists"),
+    EMAIL_ALREADY_EXISTS(409, "Email already exists"),
+    ROLE_NOT_FOUND(404, "Role not found")
+    ;
 
 
     private final int code;

@@ -1,6 +1,7 @@
 package com.example.demo.core.config.cache.caffein;
 
 import com.github.benmanes.caffeine.cache.Caffeine;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cache.caffeine.CaffeineCacheManager;
@@ -13,12 +14,16 @@ import java.util.concurrent.TimeUnit;
 @EnableCaching
 public class CacheConfig {
 
+    private static final int MAX_CACHE_SIZE = 100;
+
+    private static final int expireAfterWriteMinutes = 10;
+
     @Bean
     public CacheManager cacheManager() {
         CaffeineCacheManager cacheManager = new CaffeineCacheManager("resourceCache");
         cacheManager.setCaffeine(Caffeine.newBuilder()
-                .maximumSize(1000)
-                .expireAfterWrite(10, TimeUnit.MINUTES));
+                .maximumSize(MAX_CACHE_SIZE)
+                .expireAfterWrite(expireAfterWriteMinutes, TimeUnit.MINUTES));
         return cacheManager;
     }
 

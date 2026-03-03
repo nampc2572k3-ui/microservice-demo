@@ -12,7 +12,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.LockedException;
-import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.validation.BindException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -70,14 +69,6 @@ public class CustomControllerExceptionAdvice {
         );
     }
 
-    @ExceptionHandler(AuthorizationDeniedException.class)
-    public ResponseEntity<?> handleAuthorizationDeniedException(AuthorizationDeniedException e) {
-        return ResponseEntity.ok(
-                ResponseUtils.error(
-                        HttpStatus.FORBIDDEN.value(), e.getMessage()
-                )
-        );
-    }
 
     @ExceptionHandler(DisabledException.class)
     public ResponseEntity<?> handleDisabledException(DisabledException e) {

@@ -2,20 +2,40 @@ package com.example.demo.core.config.security;
 
 import com.example.demo.auth.model.entity.Account;
 import com.example.demo.auth.model.entity.Menu;
+import com.example.demo.auth.model.entity.Role;
 import com.example.demo.common.constant.ActionType;
 import lombok.Builder;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import java.util.Collection;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+
 @Builder
 public record UserDetailsImpl(Account account) implements UserDetails {
+
+  public static UserDetailsImpl build( UUID userId,
+                                       String userNm,
+                                       String email,
+                                       String userStatus,
+                                       String password,
+                                       List<Role> roles) {
+        return UserDetailsImpl.builder()
+                .account(Account.builder()
+                        .id(userId)
+                        .email(email)
+                        .username(userNm)
+                        .password(password)
+                        .enabled("ACTIVE".equals(userStatus))
+                        .locked("LOCKED".equals(userStatus))
+                        .roles(new HashSet<>(roles))
+                        .build())
+                .build();
+  }
+
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
