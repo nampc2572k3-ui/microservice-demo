@@ -19,7 +19,7 @@ public class RedisConfig {
 
     @Bean("redis-properties")
     @ConditionalOnMissingBean(name = "redis-properties")
-    @ConfigurationProperties(prefix = "spring.microservice-redis")
+    @ConfigurationProperties(prefix = "microservice-redis")
     public RedisProperties redisProperties() {
         return new RedisProperties();
     }

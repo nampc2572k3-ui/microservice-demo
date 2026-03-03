@@ -7,8 +7,6 @@ services:
     image: mysql:8.0
     container_name: auth
     restart: always
-    env_file:
-      - .env
     environment:
       MYSQL_ROOT_PASSWORD: ${AUTH_MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: ${AUTH_MYSQL_DATABASE}
@@ -26,6 +24,4 @@ services:
       - "6379:6379"
     env_file:
       - .env
-    networks:
-      - app-network
 
