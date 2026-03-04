@@ -14,7 +14,12 @@ import java.util.UUID;
 @Repository
 public interface AccountRepository extends JpaRepository<Account, UUID> {
 
-    @Query("SELECT a FROM Account a WHERE a.username = :input OR a.email = :input")
+    // Use JOIN FETCH with DISTINCT to eagerly load roles -> roleMenus -> menu in one query and avoid N+1
+    @Query("SELECT DISTINCT a FROM Account a " +
+            "LEFT JOIN FETCH a.roles r " +
+            "LEFT JOIN FETCH r.roleMenus rm " +
+            "LEFT JOIN FETCH rm.menu m " +
+            "WHERE a.username = :input OR a.email = :input")
     Optional<Account> findByUsernameOrEmail(@Param("input") String input);
 
     boolean existsAccountByUsername(@NotBlank String userName);

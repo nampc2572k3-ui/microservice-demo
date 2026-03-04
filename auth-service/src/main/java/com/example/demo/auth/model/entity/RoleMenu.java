@@ -4,12 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(
-        name = "role_menu",
-        uniqueConstraints = {
-                @UniqueConstraint(columnNames = {"role_id", "menu_id", "permission"})
-        }
-)
+@Table(name = "role_menu")
 @Getter
 @Setter
 @NoArgsConstructor

@@ -17,12 +17,17 @@ import java.util.stream.Stream;
 @Builder
 public record UserDetailsImpl(Account account) implements UserDetails {
 
-  public static UserDetailsImpl build( UUID userId,
-                                       String userNm,
-                                       String email,
-                                       String userStatus,
-                                       String password,
-                                       List<Role> roles) {
+    public static UserDetailsImpl build(UUID userId,
+                                        String userNm,
+                                        String email,
+                                        String userStatus,
+                                        String password,
+                                        List<Role> roles) {
+
+        Set<Role> roleSet = roles == null
+                ? Collections.emptySet()
+                : new HashSet<>(roles);
+
         return UserDetailsImpl.builder()
                 .account(Account.builder()
                         .id(userId)
@@ -31,10 +36,10 @@ public record UserDetailsImpl(Account account) implements UserDetails {
                         .password(password)
                         .enabled("ACTIVE".equals(userStatus))
                         .locked("LOCKED".equals(userStatus))
-                        .roles(new HashSet<>(roles))
+                        .roles(roleSet)
                         .build())
                 .build();
-  }
+    }
 
 
     @Override
