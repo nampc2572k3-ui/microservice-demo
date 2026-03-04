@@ -6,15 +6,25 @@ server:
 # db
 spring:
   application:
-    name: identity-service
+    name: auth-service
   datasource:
-    url: "jdbc:mysql://${AUTH_DB_HOST}:${AUTH_DB_PORT}/${AUTH_MYSQL_DATABASE}?useSSL=false&serverTimezone=Asia/Ho_Chi_Minh"
+    url: "jdbc:mysql://${AUTH_DB_HOST}:${AUTH_DB_PORT}/${AUTH_MYSQL_DATABASE}?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=Asia/Ho_Chi_Minh"
     driverClassName: "com.mysql.cj.jdbc.Driver"
-    username: dev
-    password: password
+    username: ${AUTH_MYSQL_USER}
+    password: ${AUTH_MYSQL_PASSWORD}
+  # flyway
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    url: "jdbc:mysql://${AUTH_DB_HOST}:${AUTH_DB_PORT}/${AUTH_MYSQL_DATABASE}?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=Asia/Ho_Chi_Minh"
+    user: ${AUTH_MYSQL_USER}
+    password: ${AUTH_MYSQL_PASSWORD}
+    baseline-on-migrate: true
+    out-of-order: true
+    clean-disabled: true
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: none
     show-sql: true
 
 # jwt
@@ -29,3 +39,7 @@ microservice-redis:
   port: ${REDIS_PORT}
   timeout: ${REDIS_TIMEOUT}
   database: ${REDIS_DATABASE}
+
+logging:
+  level:
+    org.flywaydb: DEBUG
