@@ -40,6 +40,12 @@ microservice-redis:
   timeout: ${REDIS_TIMEOUT}
   database: ${REDIS_DATABASE}
 
+
+# logging
 logging:
   level:
     org.flywaydb: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.orm.jdbc.bind: TRACE
+    org.springframework.security.web: DEBUG
+    org.springframework.security: DEBUG

@@ -5,6 +5,7 @@ import com.example.demo.auth.model.entity.Resource;
 import com.example.demo.auth.service.cache.ResourceCacheService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.authorization.AuthorizationManager;
 import org.springframework.security.core.Authentication;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.function.Supplier;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class CustomAuthorizationManager
@@ -39,6 +41,18 @@ public class CustomAuthorizationManager
                 request.getRequestURI()
         );
 
+        // log the request method and URI for debugging
+        log.debug("Authorizing request: {} {}", request.getMethod(), request.getRequestURI());
+
+        // log resource for debugging
+        if (resource != null) {
+            log.debug("Matched resource: {} {} -> {}",
+                    request.getMethod(), request.getRequestURI(), resource.getPattern());
+        } else {
+            log.debug("No resource matched for {} {}", request.getMethod(), request.getRequestURI());
+        }
+
+
         if (resource == null) {
             return new AuthorizationDecision(false);
         }
@@ -53,6 +67,7 @@ public class CustomAuthorizationManager
 
         return new AuthorizationDecision(granted);
     }
+
 }
 
 
