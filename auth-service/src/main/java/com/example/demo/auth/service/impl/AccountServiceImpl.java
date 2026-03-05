@@ -2,7 +2,9 @@ package com.example.demo.auth.service.impl;
 
 import com.example.demo.auth.model.dto.request.LoginRequest;
 import com.example.demo.auth.model.dto.request.RegisterRequest;
+import com.example.demo.auth.model.dto.request.RefreshTokenRequest;
 import com.example.demo.auth.model.dto.response.AccountDetailResponse;
+import com.example.demo.auth.model.dto.response.RefreshTokenResponse;
 import com.example.demo.auth.model.entity.Account;
 import com.example.demo.auth.model.entity.Role;
 import com.example.demo.auth.repository.AccountRepository;
@@ -14,6 +16,7 @@ import com.example.demo.common.constant.ErrorCode;
 import com.example.demo.common.exception.CustomBusinessException;
 import com.example.demo.common.utils.JwtUtils;
 import com.example.demo.core.config.security.UserDetailsImpl;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -118,7 +121,6 @@ public class AccountServiceImpl implements AccountService {
         //log roles
         log.info("User {} has roles: {}", acc.getUsername(), roles.stream().map(AccountDetailResponse.RoleResponse::getRoleName).toList());
 
-
         return AccountDetailResponse.builder()
                 .accountId(acc.getId())
                 .username(acc.getUsername())
@@ -128,4 +130,42 @@ public class AccountServiceImpl implements AccountService {
                 .refreshToken(refreshToken)
                 .build();
     }
+
+    @Override
+    public void logout(HttpServletRequest request) {
+        final var authHeader = request.getHeader("Authorization");
+        String accessToken = authHeader.substring(7);
+
+        // add token to blacklist in redis with expiration time same as remaining time of token
+        tokenRedisService.storeBlacklistToken(accessToken, jwtUtils.getTokenExpirationRemaining(accessToken));
+
+    }
+
+    @Override
+    public RefreshTokenResponse refreshToken(RefreshTokenRequest request) {
+        String refreshToken = request.getRefreshToken();
+
+        String username = jwtUtils.extractUsername(refreshToken);
+
+        // compare with stored refresh token in Redis
+        String stored = tokenRedisService.getRefreshToken(username);
+        if (stored == null || !stored.equals(refreshToken)) {
+            throw new CustomBusinessException(ErrorCode.AUTH_INVALID_TOKEN.getCode(), ErrorCode.AUTH_INVALID_TOKEN.getMessage());
+        }
+
+        // load account
+        Account acc = accountRepository.findByUsernameOrEmail(username)
+                .orElseThrow(() -> new CustomBusinessException(ErrorCode.USER_NOT_FOUND.getCode(), ErrorCode.USER_NOT_FOUND.getMessage()));
+
+        UserDetailsImpl userDetails = new UserDetailsImpl(acc);
+
+        // generate new tokens
+        String newAccessToken = jwtUtils.generateAccessToken(userDetails);
+
+        return RefreshTokenResponse.builder()
+                .accessToken(newAccessToken)
+                .refreshToken(refreshToken)
+                .build();
+    }
+
 }
