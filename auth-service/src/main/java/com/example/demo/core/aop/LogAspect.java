@@ -11,6 +11,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.regex.Pattern;
 
 @Slf4j
 @Aspect
@@ -20,10 +22,13 @@ public class LogAspect {
 
     private final HttpServletRequest request;
 
-    // Chỉ log controller + service
+    private static final Pattern JWT_PATTERN =
+            Pattern.compile("^[A-Za-z0-9-_]+\\.[A-Za-z0-9-_]+\\.[A-Za-z0-9-_]+$");
+
+    // Chỉ log controller + service trong package com.example.demo
     private static final String POINTCUT =
-            "execution(* com.lgcns.amfw..controller..*(..)) || " +
-                    "execution(* com.lgcns.amfw..service..*(..))";
+            "execution(* com.example.demo..controller..*(..)) || " +
+                    "execution(* com.example.demo..service..*(..))";
 
     @Around(POINTCUT)
     public Object logAround(ProceedingJoinPoint joinPoint) throws Throwable {
@@ -99,18 +104,70 @@ public class LogAspect {
     }
 
     private Object sanitizeArgs(Object[] args) {
+        if (args == null) return null;
+
         return Arrays.stream(args)
                 .map(arg -> {
-                    if (arg == null) return null;
+                    try {
+                        if (arg == null) return null;
 
-                    String value = arg.toString().toLowerCase();
+                        // hide HttpServletRequest to avoid logging headers/bodies
+                        if (arg instanceof HttpServletRequest) return "<HTTP_REQUEST>";
 
-                    if (value.contains("password") || value.contains("token")) {
-                        return "***";
+                        // hide binary content
+                        if (arg instanceof byte[]) return "<BINARY>";
+
+                        // Collections/arrays: map elements
+                        if (arg instanceof Collection<?> coll) {
+                            return coll.stream()
+                                    .map(Object::toString)
+                                    .map(this::redactIfSensitive)
+                                    .toList();
+                        }
+
+                        // If it's a string, check for JWT or sensitive keywords
+                        if (arg instanceof String s) {
+                            if (JWT_PATTERN.matcher(s).matches()) {
+                                return "***REDACTED_JWT***";
+                            }
+                            String low = s.toLowerCase();
+                            if (low.contains("password") || low.contains("token") || low.contains("secret") || low.contains("jwt")) {
+                                return "***REDACTED***";
+                            }
+                            // long opaque strings (likely tokens) - redact by heuristic
+                            if (s.length() > 100 && s.contains(".")) {
+                                return "***REDACTED***";
+                            }
+                            return s;
+                        }
+
+                        // For other object types fall back to toString and check
+                        String value = arg.toString();
+                        if (JWT_PATTERN.matcher(value).matches()) {
+                            return "***REDACTED_JWT***";
+                        }
+
+                        String lower = value.toLowerCase();
+                        if (lower.contains("password") || lower.contains("token") || lower.contains("secret") || lower.contains("jwt")) {
+                            return "***REDACTED***";
+                        }
+
+                        return arg;
+                    } catch (Exception ex) {
+                        return "<UNSERIALIZABLE_ARG>";
                     }
-
-                    return arg;
                 })
                 .toList();
+    }
+
+    private String redactIfSensitive(String s) {
+        if (s == null) return null;
+        if (JWT_PATTERN.matcher(s).matches()) return "***REDACTED_JWT***";
+        String low = s.toLowerCase();
+        if (low.contains("password") || low.contains("token") || low.contains("secret") || low.contains("jwt")) {
+            return "***REDACTED***";
+        }
+        if (s.length() > 100 && s.contains(".")) return "***REDACTED***";
+        return s;
     }
 }
