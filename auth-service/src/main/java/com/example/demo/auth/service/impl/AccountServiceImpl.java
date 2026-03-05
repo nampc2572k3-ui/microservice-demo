@@ -8,11 +8,11 @@ import com.example.demo.auth.model.entity.Role;
 import com.example.demo.auth.repository.AccountRepository;
 import com.example.demo.auth.repository.RoleRepository;
 import com.example.demo.auth.service.AccountService;
+import com.example.demo.auth.service.cache.PermissionService;
 import com.example.demo.auth.service.cache.TokenRedisService;
 import com.example.demo.common.constant.ErrorCode;
 import com.example.demo.common.exception.CustomBusinessException;
 import com.example.demo.common.utils.JwtUtils;
-import com.example.demo.common.utils.UserUtils;
 import com.example.demo.core.config.security.UserDetailsImpl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -40,6 +40,7 @@ public class AccountServiceImpl implements AccountService {
     private final AuthenticationManager authenticationManager;
     private final JwtUtils jwtUtils;
     private final TokenRedisService tokenRedisService;
+    private final PermissionService permissionService;
 
     @Transactional(rollbackFor = Exception.class)
     @Override
@@ -60,7 +61,7 @@ public class AccountServiceImpl implements AccountService {
         }
 
         // find role by request.getRoleIds
-        Set<Role> roles = new HashSet<>(roleRepository.findAllById(request.getRoleIds()));
+        Set<Role> roles = new HashSet<>(roleRepository.findAllByIdWithMenus(request.getRoleIds()));
         if (roles.size() != request.getRoleIds().size()) {
             log.error("Some roleIds not found: {}", request.getRoleIds());
             throw new CustomBusinessException(
@@ -108,7 +109,7 @@ public class AccountServiceImpl implements AccountService {
                                 .menus(role.getRoleMenus().stream()
                                         .map(menu -> AccountDetailResponse.RoleResponse.MenuPermissionResponse.builder()
                                                 .code(menu.getMenu().getCode())
-                                                .permissions(UserUtils.extractPermissions(menu.getPermission()))
+                                                .permissions(permissionService.extractPermissions(menu.getPermission()))
                                                 .build())
                                         .toList())
                                 .build())

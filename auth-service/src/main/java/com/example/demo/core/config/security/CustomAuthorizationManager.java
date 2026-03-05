@@ -2,7 +2,7 @@ package com.example.demo.core.config.security;
 
 
 import com.example.demo.auth.model.entity.Resource;
-import com.example.demo.auth.service.cache.ResourceCacheService;
+import com.example.demo.auth.service.cache.PermissionService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,7 +21,7 @@ import java.util.function.Supplier;
 public class CustomAuthorizationManager
         implements AuthorizationManager<RequestAuthorizationContext> {
 
-    private final ResourceCacheService resourceCacheService;
+    private final PermissionService permissionService;
 
     @Override
     public AuthorizationDecision authorize(
@@ -36,7 +36,7 @@ public class CustomAuthorizationManager
             return new AuthorizationDecision(false);
         }
 
-        Resource resource = resourceCacheService.findMatch(
+        Resource resource = permissionService.findMatch(
                 request.getMethod(),
                 request.getRequestURI()
         );

@@ -33,7 +33,7 @@ public class CustomControllerExceptionAdvice {
 
             var response = ResponseUtils.error(
                     HttpStatus.BAD_REQUEST.value(), message);
-            return ResponseEntity.ok(response);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
         if (e instanceof HandlerMethodValidationException validationException) {
             var message = validationException.getValueResults().stream()
@@ -42,44 +42,42 @@ public class CustomControllerExceptionAdvice {
                     .collect(Collectors.joining(", "));
 
             var response = ResponseUtils.error(
-                    HttpStatus.INTERNAL_SERVER_ERROR.value(), message);
-            return ResponseEntity.ok(response);
+                    HttpStatus.BAD_REQUEST.value(), message);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
         var response = ResponseUtils.error(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
                 "Internal server error"
         );
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR.value()).body(response);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
     }
 
     @ExceptionHandler(CustomBusinessException.class)
     public ResponseEntity<?> handleCustomBusinessException(CustomBusinessException e) {
-        return ResponseEntity.ok(
-                ResponseUtils.error(e.getErrorCode(), e.getMessage())
-        );
+        var response = ResponseUtils.error(e.getErrorCode(), e.getMessage());
+        return ResponseEntity.status(e.getErrorCode()).body(response);
     }
 
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<?> handleBadCredentialsException(BadCredentialsException e) {
-        return ResponseEntity.ok(
-                ResponseUtils.error(
-                        HttpStatus.BAD_REQUEST.value(),
-                        "Bad credentials"
-                )
+        var response = ResponseUtils.error(
+                HttpStatus.BAD_REQUEST.value(),
+                "Bad credentials"
         );
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 
 
     @ExceptionHandler(DisabledException.class)
     public ResponseEntity<?> handleDisabledException(DisabledException e) {
-        return ResponseEntity.ok(
-                ResponseUtils.error(HttpStatus.FORBIDDEN.value(), e.getMessage()));
+        var response = ResponseUtils.error(HttpStatus.FORBIDDEN.value(), e.getMessage());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
     }
 
     @ExceptionHandler(LockedException.class)
     public ResponseEntity<?> handleLockedException(LockedException e) {
-        return ResponseEntity.ok(
-                ResponseUtils.error(HttpStatus.FORBIDDEN.value(), e.getMessage()));
+        var response = ResponseUtils.error(HttpStatus.FORBIDDEN.value(), e.getMessage());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
     }
 
 }

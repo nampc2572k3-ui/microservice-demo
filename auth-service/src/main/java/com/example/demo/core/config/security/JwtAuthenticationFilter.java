@@ -2,6 +2,8 @@ package com.example.demo.core.config.security;
 
 import com.example.demo.auth.service.cache.TokenRedisService;
 import com.example.demo.common.utils.JwtUtils;
+import com.example.demo.common.utils.JsonUtils;
+import com.example.demo.common.utils.ResponseUtils;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -47,7 +49,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         if (redisBlacklistService.isBlacklisted(token)) {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.getWriter().write("Token has been revoked");
+            response.setContentType("application/json;charset=UTF-8");
+            var body = ResponseUtils.error(HttpServletResponse.SC_UNAUTHORIZED, "Token has been revoked");
+            response.getWriter().write(JsonUtils.marshal(body));
             return;
         }
 
@@ -83,8 +87,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
 
         } catch (Exception ex) {
+            // log internal exception but don't expose details to clients
+            log.warn("JWT authentication failed: {}", ex.toString());
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.getWriter().write("Unauthorized: " + ex.getMessage());
+            response.setContentType("application/json;charset=UTF-8");
+            var body = ResponseUtils.error(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
+            response.getWriter().write(JsonUtils.marshal(body));
             return;
         }
 

@@ -1,8 +1,5 @@
 package com.example.demo.common.utils;
 
-import com.example.demo.auth.model.dto.response.AccountDetailResponse;
-import com.example.demo.auth.model.entity.Account;
-import com.example.demo.common.constant.ActionType;
 import com.example.demo.common.constant.ErrorCode;
 import com.example.demo.core.config.security.UserDetailsImpl;
 import io.jsonwebtoken.*;
@@ -22,8 +19,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
-import static java.util.stream.Collectors.toList;
 
 @Slf4j
 @Component
