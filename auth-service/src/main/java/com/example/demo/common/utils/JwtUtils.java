@@ -118,6 +118,13 @@ public class JwtUtils {
         return raw != null ? UUID.fromString(raw.toString()) : null;
     }
 
+    // get time remaining before token expires
+    public long getTokenExpirationRemaining(String token) {
+        Date expiration = extractClaim(token, Claims::getExpiration);
+        long now = System.currentTimeMillis();
+        return expiration.getTime() - now;
+    }
+
 
     public boolean isRefreshToken(String token) {
         return "refresh".equals(parseStringClaim(token));
