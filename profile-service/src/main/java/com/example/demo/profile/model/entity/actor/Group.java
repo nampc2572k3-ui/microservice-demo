@@ -10,8 +10,10 @@ import org.springframework.data.neo4j.core.schema.Node;
 @Builder
 @Getter
 @Setter
-@Node("groups")
+@Node("group")
 public class Group extends BaseActor {
+
+    private String description;
 
     // img todo
 

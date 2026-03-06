@@ -1,32 +1,25 @@
-package com.example.demo.profile.model.entity.actor;
-
+package com.example.demo.profile.model.entity.actor.attribute;
 
 import com.example.demo.profile.model.entity.BaseEntity;
 import lombok.*;
+import org.springframework.data.annotation.Id;
 import org.springframework.data.neo4j.core.schema.GeneratedValue;
-import org.springframework.data.neo4j.core.schema.Id;
 import org.springframework.data.neo4j.core.schema.Node;
 
-import java.util.UUID;
-
-@Node
 @EqualsAndHashCode(callSuper = true)
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 @Getter
 @Setter
-public abstract class BaseActor extends BaseEntity {
+@Node("link")
+public class Link extends BaseEntity {
 
     @Id
     @GeneratedValue
-    private UUID id;
+    private Long id;
 
-    private String name;
+    private String title;
 
-    private String bio;
-
-    private boolean isVerified;
-
-    private String slug;
-
+    private String url;
 }

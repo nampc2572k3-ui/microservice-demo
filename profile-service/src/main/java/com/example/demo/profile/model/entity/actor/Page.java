@@ -1,7 +1,12 @@
 package com.example.demo.profile.model.entity.actor;
 
+import com.example.demo.common.constant.PageType;
+import com.example.demo.profile.model.entity.relationship.user.HasLink;
 import lombok.*;
 import org.springframework.data.neo4j.core.schema.Node;
+import org.springframework.data.neo4j.core.schema.Relationship;
+
+import java.util.Set;
 
 @EqualsAndHashCode(callSuper = true)
 @AllArgsConstructor
@@ -11,6 +16,8 @@ import org.springframework.data.neo4j.core.schema.Node;
 @Setter
 @Node("page")
 public class Page extends BaseActor {
+
+    private PageType pageType;
 
     // Base information
     private String Location;
@@ -27,16 +34,15 @@ public class Page extends BaseActor {
     private String location;
 
     // Link todo
+    @Relationship(type = "HAS_LINK")
+    private Set<HasLink> links;
 
     // Evaluate todo
 
     // Price todo
 
     // Service todo
-
-    // Team Member todo
-
-    // Blue checkmark todo
+    private String service;
 
     // img todo
 

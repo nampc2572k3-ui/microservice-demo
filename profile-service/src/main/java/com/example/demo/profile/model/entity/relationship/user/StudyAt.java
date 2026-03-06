@@ -1,0 +1,38 @@
+package com.example.demo.profile.model.entity.relationship.user;
+
+import com.example.demo.profile.model.entity.BaseEntity;
+import com.example.demo.profile.model.entity.actor.Page;
+import lombok.*;
+import org.springframework.data.neo4j.core.schema.GeneratedValue;
+import org.springframework.data.neo4j.core.schema.Id;
+import org.springframework.data.neo4j.core.schema.RelationshipProperties;
+import org.springframework.data.neo4j.core.schema.TargetNode;
+
+import java.time.LocalDate;
+
+@EqualsAndHashCode(callSuper = true)
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
+@Getter
+@Setter
+@RelationshipProperties
+public class StudyAt extends BaseEntity {
+
+    @Id
+    @GeneratedValue
+    private Long id;
+
+    private LocalDate startDate;
+
+    private LocalDate endDate;
+
+    private String major;
+
+    private String description;
+
+    private String course;
+
+    @TargetNode
+    private Page page;
+}
