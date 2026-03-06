@@ -6,5 +6,6 @@ import lombok.Getter;
 public enum PrivacyLevel {
     PUBLIC,
     FRIENDS_ONLY,
-    PRIVATE
+    PRIVATE,
+    MEMBERS_ONLY
 }

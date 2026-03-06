@@ -1,32 +1,29 @@
-package com.example.demo.profile.model.entity.actor;
-
+package com.example.demo.profile.model.entity.actor.attribute;
 
 import com.example.demo.profile.model.entity.BaseEntity;
 import lombok.*;
+import org.springframework.data.annotation.Id;
 import org.springframework.data.neo4j.core.schema.GeneratedValue;
-import org.springframework.data.neo4j.core.schema.Id;
 import org.springframework.data.neo4j.core.schema.Node;
 
-import java.util.UUID;
+import java.time.LocalDate;
 
-@Node
 @EqualsAndHashCode(callSuper = true)
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 @Getter
 @Setter
-public abstract class BaseActor extends BaseEntity {
+@Node("place")
+public class Place extends BaseEntity {
 
     @Id
     @GeneratedValue
-    private UUID id;
+    private Long id;
 
     private String name;
 
-    private String bio;
+    private LocalDate date;
 
-    private boolean isVerified;
-
-    private String slug;
-
+    // url location todo
 }

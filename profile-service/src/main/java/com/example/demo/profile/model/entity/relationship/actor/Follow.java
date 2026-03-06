@@ -1,10 +1,12 @@
-package com.example.demo.profile.model.entity.relationship;
+package com.example.demo.profile.model.entity.relationship.actor;
 
 import com.example.demo.profile.model.entity.BaseEntity;
+import com.example.demo.profile.model.entity.actor.BaseActor;
 import lombok.*;
 import org.springframework.data.neo4j.core.schema.GeneratedValue;
 import org.springframework.data.neo4j.core.schema.Id;
 import org.springframework.data.neo4j.core.schema.RelationshipProperties;
+import org.springframework.data.neo4j.core.schema.TargetNode;
 
 @EqualsAndHashCode(callSuper = true)
 @AllArgsConstructor
@@ -19,4 +21,6 @@ public class Follow extends BaseEntity {
     @GeneratedValue
     private Long id;
 
+    @TargetNode
+    private BaseActor target;
 }

@@ -1,10 +1,10 @@
-package com.example.demo.profile.model.entity.relationship;
+package com.example.demo.profile.model.entity.actor.attribute.interested;
 
 import com.example.demo.profile.model.entity.BaseEntity;
 import lombok.*;
 import org.springframework.data.neo4j.core.schema.GeneratedValue;
 import org.springframework.data.neo4j.core.schema.Id;
-import org.springframework.data.neo4j.core.schema.RelationshipProperties;
+import org.springframework.data.neo4j.core.schema.Node;
 
 @EqualsAndHashCode(callSuper = true)
 @AllArgsConstructor
@@ -12,10 +12,16 @@ import org.springframework.data.neo4j.core.schema.RelationshipProperties;
 @Builder
 @Getter
 @Setter
-@RelationshipProperties
-public class MemberOf extends BaseEntity {
+@Node("music")
+public class Music extends BaseEntity {
 
     @Id
     @GeneratedValue
     private Long id;
+
+    private String name;
+
+    private String author;
+
+    // audio file todo
 }
