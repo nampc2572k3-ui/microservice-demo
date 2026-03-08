@@ -1,12 +1,12 @@
-package com.example.demo.profile.model.entity.actor.attribute;
+package com.example.demo.profile.model.entity.reference.interested;
 
+import com.example.demo.common.constant.MediaType;
+import com.example.demo.profile.model.entity.Audit;
 import com.example.demo.profile.model.entity.BaseEntity;
 import lombok.*;
-import org.springframework.data.annotation.Id;
 import org.springframework.data.neo4j.core.schema.GeneratedValue;
+import org.springframework.data.neo4j.core.schema.Id;
 import org.springframework.data.neo4j.core.schema.Node;
-
-import java.time.LocalDate;
 
 @EqualsAndHashCode(callSuper = true)
 @AllArgsConstructor
@@ -14,16 +14,15 @@ import java.time.LocalDate;
 @Builder
 @Getter
 @Setter
-@Node("place")
-public class Place extends BaseEntity {
+@Node("media")
+public class Media  extends Audit implements InterestTarget {
 
     @Id
     @GeneratedValue
     private Long id;
 
-    private String name;
+    private MediaType mediaType;
 
-    private LocalDate date;
+    // img todo
 
-    // url location todo
 }

@@ -1,6 +1,6 @@
 package com.example.demo.profile.model.entity.relationship.user;
 
-import com.example.demo.profile.model.entity.BaseEntity;
+import com.example.demo.profile.model.entity.Audit;
 import com.example.demo.profile.model.entity.actor.Page;
 import lombok.*;
 import org.springframework.data.neo4j.core.schema.GeneratedValue;
@@ -17,7 +17,7 @@ import java.time.LocalDate;
 @Getter
 @Setter
 @RelationshipProperties
-public class StudyAt extends BaseEntity {
+public class StudyAt extends Audit {
 
     @Id
     @GeneratedValue

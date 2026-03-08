@@ -1,10 +1,13 @@
-package com.example.demo.profile.model.entity.actor.attribute;
+package com.example.demo.profile.model.entity.reference;
 
+import com.example.demo.profile.model.entity.Audit;
 import com.example.demo.profile.model.entity.BaseEntity;
 import lombok.*;
-import org.springframework.data.annotation.Id;
 import org.springframework.data.neo4j.core.schema.GeneratedValue;
+import org.springframework.data.neo4j.core.schema.Id;
 import org.springframework.data.neo4j.core.schema.Node;
+
+import java.time.LocalDate;
 
 @EqualsAndHashCode(callSuper = true)
 @AllArgsConstructor
@@ -12,14 +15,16 @@ import org.springframework.data.neo4j.core.schema.Node;
 @Builder
 @Getter
 @Setter
-@Node("link")
-public class Link extends BaseEntity {
+@Node("place")
+public class Place extends Audit {
 
     @Id
     @GeneratedValue
     private Long id;
 
-    private String title;
+    private String name;
 
-    private String url;
+    private LocalDate date;
+
+    // url location todo
 }

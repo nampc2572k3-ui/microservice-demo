@@ -1,6 +1,8 @@
 package com.example.demo.profile.model.entity.actor;
 
 import com.example.demo.common.constant.PageType;
+import com.example.demo.profile.model.entity.reference.interested.InterestTarget;
+import com.example.demo.profile.model.entity.relationship.actor.HasPrivacy;
 import com.example.demo.profile.model.entity.relationship.user.HasLink;
 import lombok.*;
 import org.springframework.data.neo4j.core.schema.Node;
@@ -15,12 +17,9 @@ import java.util.Set;
 @Getter
 @Setter
 @Node("page")
-public class Page extends BaseActor {
+public class Page extends BaseActor implements InterestTarget {
 
     private PageType pageType;
-
-    // Base information
-    private String Location;
 
     // Contact information
     private String phone;
@@ -43,6 +42,10 @@ public class Page extends BaseActor {
 
     // Service todo
     private String service;
+
+    // privacy
+    @Relationship(type = "HAS_PRIVACY")
+    private HasPrivacy hasPrivacy;
 
     // img todo
 

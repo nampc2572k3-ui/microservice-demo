@@ -1,7 +1,7 @@
 package com.example.demo.profile.model.entity.relationship.user;
 
-import com.example.demo.profile.model.entity.BaseEntity;
-import com.example.demo.profile.model.entity.actor.attribute.Place;
+import com.example.demo.profile.model.entity.Audit;
+import com.example.demo.profile.model.entity.reference.Place;
 import lombok.*;
 import org.springframework.data.neo4j.core.schema.GeneratedValue;
 import org.springframework.data.neo4j.core.schema.Id;
@@ -15,13 +15,13 @@ import org.springframework.data.neo4j.core.schema.TargetNode;
 @Getter
 @Setter
 @RelationshipProperties
-public class TraveledTo extends BaseEntity {
+public class TraveledTo extends Audit {
 
     @Id
     @GeneratedValue
     private Long id;
 
     @TargetNode
-    private Place travel;
+    private Place place;
 
 }

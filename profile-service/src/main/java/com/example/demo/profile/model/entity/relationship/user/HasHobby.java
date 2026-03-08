@@ -1,21 +1,20 @@
 package com.example.demo.profile.model.entity.relationship.user;
 
-import com.example.demo.profile.model.entity.BaseEntity;
-import com.example.demo.profile.model.entity.actor.attribute.Hobby;
+import com.example.demo.profile.model.entity.reference.Hobby;
 import lombok.*;
 import org.springframework.data.neo4j.core.schema.GeneratedValue;
 import org.springframework.data.neo4j.core.schema.Id;
 import org.springframework.data.neo4j.core.schema.RelationshipProperties;
 import org.springframework.data.neo4j.core.schema.TargetNode;
 
-@EqualsAndHashCode(callSuper = true)
+
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
 @Getter
 @Setter
 @RelationshipProperties
-public class HasHobby extends BaseEntity {
+public class HasHobby  {
 
     @Id
     @GeneratedValue

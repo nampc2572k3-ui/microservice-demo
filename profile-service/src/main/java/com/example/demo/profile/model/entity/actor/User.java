@@ -3,9 +3,10 @@ package com.example.demo.profile.model.entity.actor;
 import com.example.demo.common.constant.Gender;
 import com.example.demo.common.constant.RelationshipStatus;
 import com.example.demo.common.constant.UserProfileType;
-import com.example.demo.profile.model.entity.relationship.actor.Follow;
-import com.example.demo.profile.model.entity.relationship.actor.Friend;
-import com.example.demo.profile.model.entity.relationship.actor.MemberOf;
+import com.example.demo.profile.model.entity.cluster.FollowCluster;
+import com.example.demo.profile.model.entity.cluster.FriendCluster;
+import com.example.demo.profile.model.entity.relationship.actor.*;
+import com.example.demo.profile.model.entity.relationship.request.FriendRequest;
 import com.example.demo.profile.model.entity.relationship.user.*;
 import lombok.*;
 import org.springframework.data.neo4j.core.schema.Node;
@@ -22,8 +23,9 @@ import java.util.UUID;
 @Getter
 @Setter
 @Node("user")
-public class UserProfile extends BaseActor {
+public class User extends BaseActor {
 
+    // from Auth service
     private UUID accId;
 
     private UserProfileType userProfileType;
@@ -74,16 +76,29 @@ public class UserProfile extends BaseActor {
     // img todo
 
     // relationships
-        @Relationship(type = "FRIEND_WITH")
-        private Set<Friend> friends;
+    @Relationship(type = "HAS_FRIEND_CLUSTER")
+    private Set<FriendCluster> friendClusters;
 
-        @Relationship(type = "FOLLOWS")
-        private Set<Follow> follows;
+    @Relationship(type = "HAS_FOLLOW_CLUSTER")
+    private Set<FollowCluster> followClusters;
 
-        @Relationship(type = "MEMBER_OF")
-        private Set<MemberOf> memberOf;
+    @Relationship(type = "MEMBER_OF")
+    private Set<MemberOf> memberOf;
+
+    @Relationship(type = "HAS_RELATIONSHIP")
+    private Set<HasRelationship> relationships;
+
+    @Relationship(type = "BLOCK")
+    private Set<Block> blocks;
 
 
+    // privacy
+    @Relationship(type = "HAS_PRIVACY")
+    private HasPrivacy hasPrivacy;
+
+    // request
+    @Relationship(type = "FRIEND_REQUEST")
+    private Set<FriendRequest> friendRequests;
 
 
 }

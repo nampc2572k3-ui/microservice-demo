@@ -1,9 +1,10 @@
-package com.example.demo.profile.model.entity.actor.attribute;
+package com.example.demo.profile.model.entity.reference;
 
+import com.example.demo.profile.model.entity.Audit;
 import com.example.demo.profile.model.entity.BaseEntity;
 import lombok.*;
-import org.springframework.data.annotation.Id;
 import org.springframework.data.neo4j.core.schema.GeneratedValue;
+import org.springframework.data.neo4j.core.schema.Id;
 import org.springframework.data.neo4j.core.schema.Node;
 
 @EqualsAndHashCode(callSuper = true)
@@ -12,14 +13,15 @@ import org.springframework.data.neo4j.core.schema.Node;
 @Builder
 @Getter
 @Setter
-@Node("hobby")
-public class Hobby extends BaseEntity {
+@Node("link")
+public class Link extends Audit {
 
     @Id
     @GeneratedValue
     private Long id;
 
-    private String name;
 
-    private String comment;
+    private String title;
+
+    private String url;
 }
