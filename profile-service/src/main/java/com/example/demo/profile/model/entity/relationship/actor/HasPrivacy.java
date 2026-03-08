@@ -1,6 +1,6 @@
-package com.example.demo.profile.model.entity.relationship.user;
+package com.example.demo.profile.model.entity.relationship.actor;
 
-import com.example.demo.profile.model.entity.reference.Link;
+import com.example.demo.profile.model.entity.privacy.PrivacySetting;
 import lombok.*;
 import org.springframework.data.neo4j.core.schema.GeneratedValue;
 import org.springframework.data.neo4j.core.schema.Id;
@@ -14,12 +14,13 @@ import org.springframework.data.neo4j.core.schema.TargetNode;
 @Getter
 @Setter
 @RelationshipProperties
-public class HasLink  {
+public class HasPrivacy  {
 
     @Id
     @GeneratedValue
     private Long id;
 
     @TargetNode
-    private Link link;
+    private PrivacySetting privacySetting;
+
 }

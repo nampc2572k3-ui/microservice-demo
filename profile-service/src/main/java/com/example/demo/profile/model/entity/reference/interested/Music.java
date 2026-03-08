@@ -1,5 +1,6 @@
-package com.example.demo.profile.model.entity.actor.attribute.interested;
+package com.example.demo.profile.model.entity.reference.interested;
 
+import com.example.demo.profile.model.entity.Audit;
 import com.example.demo.profile.model.entity.BaseEntity;
 import lombok.*;
 import org.springframework.data.neo4j.core.schema.GeneratedValue;
@@ -12,15 +13,14 @@ import org.springframework.data.neo4j.core.schema.Node;
 @Builder
 @Getter
 @Setter
-@Node("media")
-public class Media extends BaseEntity {
+@Node("music")
+public class Music extends Audit implements InterestTarget {
 
     @Id
     @GeneratedValue
     private Long id;
 
-    private String name;
+    private String author;
 
-    // img todo
-
+    // audio file todo
 }

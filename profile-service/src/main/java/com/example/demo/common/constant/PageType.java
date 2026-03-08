@@ -10,5 +10,6 @@ public enum PageType {
     ORGANIZATION,
     CELEBRITY,
     BRAND,
-    COMMUNITY
+    COMMUNITY,
+    GAME
 }
