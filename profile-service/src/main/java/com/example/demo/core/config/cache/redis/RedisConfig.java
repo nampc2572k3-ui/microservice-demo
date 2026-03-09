@@ -60,6 +60,7 @@ public class RedisConfig {
         return redisTemplate;
     }
 
+
     @Bean("redisCacheManager")
     public CacheManager redisCacheManager(
             @Qualifier("microservice-redis-cache")

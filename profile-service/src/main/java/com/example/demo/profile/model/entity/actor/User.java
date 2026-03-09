@@ -6,6 +6,7 @@ import com.example.demo.common.constant.UserProfileType;
 import com.example.demo.profile.model.entity.cluster.FollowCluster;
 import com.example.demo.profile.model.entity.cluster.FriendCluster;
 import com.example.demo.profile.model.entity.relationship.actor.*;
+import com.example.demo.profile.model.entity.relationship.request.FollowRequest;
 import com.example.demo.profile.model.entity.relationship.request.FriendRequest;
 import com.example.demo.profile.model.entity.relationship.user.*;
 import lombok.*;
@@ -22,7 +23,7 @@ import java.util.UUID;
 @Builder
 @Getter
 @Setter
-@Node("user")
+@Node("User")
 public class User extends BaseActor {
 
     // from Auth service
@@ -100,5 +101,7 @@ public class User extends BaseActor {
     @Relationship(type = "FRIEND_REQUEST")
     private Set<FriendRequest> friendRequests;
 
+    @Relationship(type = "FOLLOW_REQUEST")
+    private Set<FollowRequest> followRequests;
 
 }

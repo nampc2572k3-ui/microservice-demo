@@ -38,7 +38,7 @@ microservice-redis:
   host: ${REDIS_HOST}
   port: ${REDIS_PORT}
   timeout: ${REDIS_TIMEOUT}
-  database: ${REDIS_DATABASE}
+  database: ${AUTH_DATABASE}
 
 
 # logging

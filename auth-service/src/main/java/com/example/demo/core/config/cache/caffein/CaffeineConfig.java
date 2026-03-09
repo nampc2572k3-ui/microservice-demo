@@ -11,14 +11,14 @@ import java.util.concurrent.TimeUnit;
 
 @Configuration
 @EnableCaching
-public class CacheConfig {
+public class CaffeineConfig {
 
     private static final int MAX_CACHE_SIZE = 100;
 
     private static final int expireAfterWriteMinutes = 10;
 
-    @Bean
-    public CacheManager cacheManager() {
+    @Bean("caffeineCacheManager")
+    public CacheManager caffeineCacheManager() {
         CaffeineCacheManager cacheManager = new CaffeineCacheManager("resourceCache");
         cacheManager.setCaffeine(Caffeine.newBuilder()
                 .maximumSize(MAX_CACHE_SIZE)

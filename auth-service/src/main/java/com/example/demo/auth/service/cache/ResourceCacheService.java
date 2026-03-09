@@ -17,14 +17,22 @@ public class ResourceCacheService {
 
     private final ResourceRepository resourceRepository;
 
-    @Cacheable(value = "resourceCache", key = "'ALL'")
+    @Cacheable(
+            cacheManager = "caffeineCacheManager",
+            value = "resourceCache",
+            key = "'ALL'"
+    )
     public List<Resource> loadAllResources() {
         log.info("Loading all resources from DB...");
         return resourceRepository.findAll();
     }
 
 
-    @CacheEvict(value = "resourceCache", allEntries = true)
+    @CacheEvict(
+            cacheManager = "caffeineCacheManager",
+            value = "resourceCache",
+            allEntries = true
+    )
     public void evictCache() {
         log.info("Resource cache cleared.");
     }

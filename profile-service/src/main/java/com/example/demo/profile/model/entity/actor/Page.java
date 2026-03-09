@@ -3,6 +3,7 @@ package com.example.demo.profile.model.entity.actor;
 import com.example.demo.common.constant.PageType;
 import com.example.demo.profile.model.entity.reference.interested.InterestTarget;
 import com.example.demo.profile.model.entity.relationship.actor.HasPrivacy;
+import com.example.demo.profile.model.entity.relationship.request.FollowRequest;
 import com.example.demo.profile.model.entity.relationship.user.HasLink;
 import lombok.*;
 import org.springframework.data.neo4j.core.schema.Node;
@@ -16,7 +17,7 @@ import java.util.Set;
 @Builder
 @Getter
 @Setter
-@Node("page")
+@Node("Page")
 public class Page extends BaseActor implements InterestTarget {
 
     private PageType pageType;
@@ -46,6 +47,10 @@ public class Page extends BaseActor implements InterestTarget {
     // privacy
     @Relationship(type = "HAS_PRIVACY")
     private HasPrivacy hasPrivacy;
+
+
+    @Relationship(type = "FOLLOW_REQUEST")
+    private Set<FollowRequest> followRequests;
 
     // img todo
 
