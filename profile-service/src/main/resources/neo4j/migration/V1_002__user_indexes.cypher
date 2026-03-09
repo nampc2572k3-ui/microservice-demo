@@ -20,8 +20,14 @@ FOR (u:User)
 ON (u.hometown);
 
 // ----- USER GENDER AND DOB INDEXES -----
-CREATE INDEX user_gender_dob_idx FOR (u:User) ON (u.gender, u.dob)
+CREATE INDEX user_gender_dob_idx IF NOT EXISTS
+FOR (u:User)
+ON (u.gender, u.dob);
 
-CREATE INDEX user_accId_idx IF NOT EXISTS FOR (u:User) ON (u.accId);
+CREATE INDEX user_accId_idx IF NOT EXISTS
+FOR (u:User)
+ON (u.accId);
 
-CREATE INDEX user_slug_idx IF NOT EXISTS FOR (u:User) ON (u.slug);
+CREATE INDEX user_slug_idx IF NOT EXISTS
+FOR (u:User)
+ON (u.slug);

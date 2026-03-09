@@ -20,6 +20,7 @@ ON (p.location);
 
 
 // ----- PAGE TYPE INDEX -----
-CREATE INDEX page_type_idx FOR (p:Page) ON (p.pageType)
 
-CREATE INDEX page_slug_idx IF NOT EXISTS FOR (p:Page) ON (p.slug);
+CREATE INDEX page_slug_idx IF NOT EXISTS
+FOR (p:Page)
+ON (p.slug);

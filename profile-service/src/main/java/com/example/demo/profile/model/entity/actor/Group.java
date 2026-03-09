@@ -2,9 +2,12 @@ package com.example.demo.profile.model.entity.actor;
 
 
 import com.example.demo.profile.model.entity.relationship.actor.HasPrivacy;
+import com.example.demo.profile.model.entity.relationship.request.FollowRequest;
 import lombok.*;
 import org.springframework.data.neo4j.core.schema.Node;
 import org.springframework.data.neo4j.core.schema.Relationship;
+
+import java.util.Set;
 
 @EqualsAndHashCode(callSuper = true)
 @AllArgsConstructor
@@ -12,7 +15,7 @@ import org.springframework.data.neo4j.core.schema.Relationship;
 @Builder
 @Getter
 @Setter
-@Node("group")
+@Node("Group")
 public class Group extends BaseActor {
 
     private String description;
@@ -21,6 +24,8 @@ public class Group extends BaseActor {
     @Relationship(type = "HAS_PRIVACY")
     private HasPrivacy hasPrivacy;
 
+    @Relationship(type = "FOLLOW_REQUEST")
+    private Set<FollowRequest> followRequests;
     // img todo
 
 }

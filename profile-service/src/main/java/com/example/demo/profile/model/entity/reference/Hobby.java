@@ -1,7 +1,6 @@
 package com.example.demo.profile.model.entity.reference;
 
 import com.example.demo.profile.model.entity.Audit;
-import com.example.demo.profile.model.entity.BaseEntity;
 import lombok.*;
 
 import org.springframework.data.neo4j.core.schema.GeneratedValue;
@@ -14,7 +13,7 @@ import org.springframework.data.neo4j.core.schema.Node;
 @Builder
 @Getter
 @Setter
-@Node("hobby")
+@Node("Hobby")
 public class Hobby extends Audit {
 
     @Id

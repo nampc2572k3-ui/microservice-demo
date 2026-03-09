@@ -10,3 +10,11 @@ spring:
     authentication:
       username: ${PROFILE_NEO4J_USERNAME}
       password: ${PROFILE_NEO4J_PASSWORD}
+
+
+# redis
+microservice-redis:
+  host: ${REDIS_HOST}
+  port: ${REDIS_PORT}
+  timeout: ${REDIS_TIMEOUT}
+  database: ${PROFILE_DATABASE}
