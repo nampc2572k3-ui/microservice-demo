@@ -1,4 +1,4 @@
-package com.example.demo.common.constant;
+package com.example.demo.profile.model.entity.enums;
 
 import lombok.Getter;
 
@@ -7,6 +7,6 @@ public enum PageSection {
 
     CONTACT_INFO,
     BASIC_INFO,
-    LINK,
+    LINK
 
 }

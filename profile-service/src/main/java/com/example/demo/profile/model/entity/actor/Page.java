@@ -1,6 +1,7 @@
 package com.example.demo.profile.model.entity.actor;
 
-import com.example.demo.common.constant.PageType;
+
+import com.example.demo.profile.model.entity.enums.PageType;
 import com.example.demo.profile.model.entity.reference.interested.InterestTarget;
 import com.example.demo.profile.model.entity.relationship.actor.HasPrivacy;
 import com.example.demo.profile.model.entity.relationship.request.FollowRequest;

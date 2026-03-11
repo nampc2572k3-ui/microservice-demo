@@ -1,7 +1,8 @@
 package com.example.demo.profile.model.entity.reference.interested;
 
-import com.example.demo.common.constant.MediaType;
+
 import com.example.demo.profile.model.entity.Audit;
+import com.example.demo.profile.model.entity.enums.MediaType;
 import lombok.*;
 import org.springframework.data.neo4j.core.schema.GeneratedValue;
 import org.springframework.data.neo4j.core.schema.Id;
