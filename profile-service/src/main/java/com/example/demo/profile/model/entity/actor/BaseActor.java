@@ -1,6 +1,7 @@
 package com.example.demo.profile.model.entity.actor;
 
 import com.example.demo.profile.model.entity.BaseEntity;
+import com.example.demo.profile.model.entity.enums.RelationshipStatus;
 import lombok.*;
 import org.springframework.data.neo4j.core.schema.GeneratedValue;
 import org.springframework.data.neo4j.core.schema.Id;
@@ -19,5 +20,7 @@ public abstract class BaseActor extends BaseEntity {
     private String bio;
 
     private boolean isVerified;
+
+
 
 }

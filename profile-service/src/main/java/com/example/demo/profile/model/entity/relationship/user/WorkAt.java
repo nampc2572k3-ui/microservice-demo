@@ -2,6 +2,7 @@ package com.example.demo.profile.model.entity.relationship.user;
 
 import com.example.demo.profile.model.entity.Audit;
 import com.example.demo.profile.model.entity.actor.Page;
+import com.example.demo.profile.model.entity.enums.PrivacyLevel;
 import lombok.*;
 import org.springframework.data.neo4j.core.schema.GeneratedValue;
 import org.springframework.data.neo4j.core.schema.Id;
@@ -32,6 +33,8 @@ public class WorkAt extends Audit {
     private String location;
 
     private String description;
+
+    private PrivacyLevel privacyLevel;
 
     @TargetNode
     private Page page;

@@ -1,8 +1,9 @@
 package com.example.demo.profile.model.entity.relationship.request;
 
-import com.example.demo.common.constant.RequestStatus;
+
 import com.example.demo.profile.model.entity.Audit;
 import com.example.demo.profile.model.entity.actor.BaseActor;
+import com.example.demo.profile.model.entity.enums.RequestStatus;
 import lombok.*;
 import org.springframework.data.neo4j.core.schema.GeneratedValue;
 import org.springframework.data.neo4j.core.schema.Id;

@@ -1,10 +1,10 @@
 package com.example.demo.profile.model.entity.actor;
 
-import com.example.demo.common.constant.Gender;
-import com.example.demo.common.constant.RelationshipStatus;
-import com.example.demo.common.constant.UserProfileType;
 import com.example.demo.profile.model.entity.cluster.FollowCluster;
 import com.example.demo.profile.model.entity.cluster.FriendCluster;
+import com.example.demo.profile.model.entity.enums.Gender;
+import com.example.demo.profile.model.entity.enums.RelationshipStatus;
+import com.example.demo.profile.model.entity.enums.UserProfileType;
 import com.example.demo.profile.model.entity.relationship.actor.*;
 import com.example.demo.profile.model.entity.relationship.request.FollowRequest;
 import com.example.demo.profile.model.entity.relationship.request.FriendRequest;
@@ -103,5 +103,7 @@ public class User extends BaseActor {
 
     @Relationship(type = "FOLLOW_REQUEST")
     private Set<FollowRequest> followRequests;
+
+    private boolean isProfileLocked = false;
 
 }
