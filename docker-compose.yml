@@ -13,7 +13,7 @@ services:
       MYSQL_USER: ${AUTH_MYSQL_USER}
       MYSQL_PASSWORD: ${AUTH_MYSQL_PASSWORD}
     ports:
-      - "3303:3306"
+      - "${AUTH_DB_PORT}:3306"
 
   # Redis
   redis:
@@ -21,7 +21,7 @@ services:
     container_name: microservice-redis
     restart: always
     ports:
-      - "6379:6379"
+      - "${REDIS_PORT}:6379"
     env_file:
       - .env
 
