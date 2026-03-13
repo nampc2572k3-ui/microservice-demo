@@ -1,7 +1,7 @@
 server:
-  port: 8080
+  port: ${AUTH_SERVICE_PORT}
   servlet:
-    context-path: /identity
+    context-path: /${AUTH_SERVICE_PATH}
 
 # db
 spring:

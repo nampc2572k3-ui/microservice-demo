@@ -1,7 +1,7 @@
 server:
-  port: 8081
+  port: ${PROFILE_SERVICE_PORT}
   servlet:
-    context-path: /profile
+    context-path: /${PROFILE_SERVICE_PATH}
 
 # db
 spring:
