@@ -3,7 +3,7 @@ name: microservice
 services:
 
   # Authentication db
-  mysql:
+  permission-mysql:
     image: mysql:8.0
     container_name: auth
     restart: always
@@ -24,4 +24,17 @@ services:
       - "${REDIS_PORT}:6379"
     env_file:
       - .env
+
+  # permission db
+  auth-mysql:
+    image: mysql:8.0
+    container_name: permission
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${PERMISSION_MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${PERMISSION_MYSQL_DATABASE}
+      MYSQL_USER: ${PERMISSION_MYSQL_USER}
+      MYSQL_PASSWORD: ${PERMISSION_MYSQL_PASSWORD}
+    ports:
+      - "${PERMISSION_DB_PORT}:3306"
 
