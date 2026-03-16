@@ -26,5 +26,4 @@ public class Role extends Audit {
     @Column(name = "is_system", nullable = false)
     private boolean system;
 
-
 }

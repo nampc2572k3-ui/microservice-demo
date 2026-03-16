@@ -2,7 +2,7 @@ CREATE TABLE account_roles
 (
     id         BIGINT NOT NULL AUTO_INCREMENT,
 
-    account_id BIGINT NOT NULL,
+    account_id VARCHAR(36) NOT NULL,
     role_id    BIGINT NOT NULL,
 
     created_at DATETIME,

@@ -27,7 +27,7 @@ public class AccountRole extends Audit {
     private Long id;
 
     @Column(name = "account_id", nullable = false)
-    private Long accountId;
+    private String accountId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "role_id", nullable = false)
