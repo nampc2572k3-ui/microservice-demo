@@ -2,7 +2,7 @@ package com.example.demo.domain.controller;
 
 import com.example.demo.common.utils.ResponseUtils;
 import com.example.demo.domain.model.dto.request.AssignRoleRequest;
-import com.example.demo.domain.model.dto.response.BaseResponse;
+import com.example.demo.domain.model.dto.response.common.BaseResponse;
 import com.example.demo.domain.model.dto.response.RoleResponse;
 import com.example.demo.domain.service.RoleService;
 import jakarta.validation.Valid;

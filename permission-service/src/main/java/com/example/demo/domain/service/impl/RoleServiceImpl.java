@@ -27,12 +27,8 @@ public class RoleServiceImpl implements RoleService {
     @Transactional(readOnly = true)
     @Override
     public List<RoleResponse> getRolesByAccount(String accId) {
-        List<RoleResponse> list = roleRepository.findRolesByAccountId(accId);
 
-        // log list for debugging
-        log.info("Roles for account {}: {}", accId, list);
-
-        return list;
+        return roleRepository.findRolesByAccountId(accId);
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -66,5 +62,10 @@ public class RoleServiceImpl implements RoleService {
         // Publish event để cache invalidation
         // todo: publish event here
 
+    }
+
+    @Override
+    public List<RoleResponse> getAll() {
+        return roleRepository.findAllRoles();
     }
 }

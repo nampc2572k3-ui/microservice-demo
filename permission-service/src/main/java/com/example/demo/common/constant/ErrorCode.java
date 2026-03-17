@@ -13,6 +13,16 @@ public enum ErrorCode {
     ROLE_UNASSIGNED(400, "Role Unassigned"),
 
 
+    // menu
+    MENU_CODE_ALREADY_EXIST(409, "Menu Code Already Exist"),
+    MENU_NOT_FOUND(404, "Menu Not Found"),
+    MENU_ALREADY_ASSIGNED(400, "Menu Already Assigned"),
+
+    // resource
+    RESOURCE_ALREADY_EXISTS(409, "Resource Already Exists"),
+    RESOURCE_NOT_FOUND(404, "Resource Not Found"),
+
+
     INTERNAL_SEVER_ERROR(500, "Internal Server Error");
 
     private final int code;

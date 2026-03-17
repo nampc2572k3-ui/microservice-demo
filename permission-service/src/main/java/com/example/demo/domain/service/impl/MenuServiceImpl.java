@@ -1,24 +1,33 @@
 package com.example.demo.domain.service.impl;
 
+import com.example.demo.common.constant.ErrorCode;
+import com.example.demo.common.exception.CustomBusinessException;
 import com.example.demo.domain.helper.MenuHelper;
 import com.example.demo.domain.model.dto.projection.MenuFlatProjection;
+import com.example.demo.domain.model.dto.projection.MenuOnlyProjection;
 import com.example.demo.domain.model.dto.projection.MenuResourceFlatProjection;
+import com.example.demo.domain.model.dto.request.AssignMenuRequest;
+import com.example.demo.domain.model.dto.request.MenuRequest;
+import com.example.demo.domain.model.dto.request.common.PageRequest;
 import com.example.demo.domain.model.dto.response.MenuResponse;
 import com.example.demo.domain.model.dto.response.MenuTreeResponse;
 import com.example.demo.domain.model.dto.response.ResourceResponse;
-import com.example.demo.domain.model.enums.ActionType;
+import com.example.demo.domain.model.entity.Menu;
+import com.example.demo.domain.model.entity.Resource;
+import com.example.demo.domain.model.entity.RoleMenu;
 import com.example.demo.domain.repository.MenuRepository;
+import com.example.demo.domain.repository.ResourceRepository;
+import com.example.demo.domain.repository.RoleMenuRepository;
 import com.example.demo.domain.service.MenuService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -28,6 +37,8 @@ public class MenuServiceImpl implements MenuService {
 
     private final MenuRepository menuRepository;
     private final MenuHelper menuHelper;
+    private final ResourceRepository resourceRepository;
+    private final RoleMenuRepository roleMenuRepository;
 
     @Transactional(readOnly = true)
     @Override
@@ -42,48 +53,151 @@ public class MenuServiceImpl implements MenuService {
 
     @Transactional(readOnly = true)
     @Override
-    public List<MenuResponse> getAll() {
+    public Page<MenuResponse> getMenus(PageRequest request) {
 
-        List<MenuResourceFlatProjection> daos = menuRepository.findAllMenuWithResources();
+        Pageable pageable = PageRequest.toPageable(
+                request.getPage(),
+                request.getSize(),
+                request.getSortBy(),
+                request.getDirection()
+        );
 
-        Map<Long, MenuResponse> map = new LinkedHashMap<>();
+        Page<MenuOnlyProjection> menuPage = menuRepository.findMenus(pageable);
 
-        log.debug("MenuResourceFlatProjection: {}", daos);
+        log.info("MenuOnlyProjection page: {}", menuPage);
 
-        for (MenuResourceFlatProjection r : daos) {
+        List<Long> menuIds = menuPage.getContent()
+                .stream()
+                .map(MenuOnlyProjection::getMenuId)
+                .toList();
 
-            MenuResponse menu = map.computeIfAbsent(
-                    r.getMenuId(),
-                    id -> {
-                        MenuResponse m = MenuResponse.builder()
-                                .id(r.getMenuId())
-                                .code(r.getMenuCode())
-                                .name(r.getMenuName())
-                                .sortOrder(r.getSortOrder())
-                                .active(r.getActive())
-                                .parentId(r.getParentId())
-                                .build();
+        if (menuIds.isEmpty()) {
+            return new PageImpl<>(Collections.emptyList(), pageable, menuPage.getTotalElements());
+        }
 
-                        m.setResources(new ArrayList<>());
-                        return m;
-                    }
+        // get all resources daos
+        List<MenuResourceFlatProjection> resourceDaos =
+                resourceRepository.findResourcesByMenuIds(menuIds);
+
+        // map menuId to list of ResourceResponse
+        Map<Long, List<ResourceResponse>> resourceMap = resourceDaos.stream()
+                .filter(r -> r.getResourceId() != null)
+                .collect(Collectors.groupingBy(
+                        MenuResourceFlatProjection::getMenuId,
+                        Collectors.mapping(ResourceResponse::from, Collectors.toList())
+                ));
+
+        log.info("Resource map for menuIds {}: {}", menuIds, resourceMap);
+
+        // build response
+        List<MenuResponse> content = menuPage.getContent()
+                .stream()
+                .map(m -> MenuResponse.from(m, resourceMap))
+                .toList();
+
+        return new PageImpl<>(content, pageable, menuPage.getTotalElements());
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    @Override
+    public void createMenu(MenuRequest request) {
+
+        if (menuRepository.findByCodeAndDeletedIsFalse(request.getCode()).isPresent()) {
+            throw new CustomBusinessException(
+                    ErrorCode.MENU_CODE_ALREADY_EXIST.getCode(),
+                    ErrorCode.MENU_CODE_ALREADY_EXIST.getMessage()
             );
+        }
 
-            if (r.getResourceId() != null) {
-                ResourceResponse res = ResourceResponse.builder()
-                        .id(r.getResourceId())
-                        .pathPattern(r.getPathPattern())
-                        .httpMethod(r.getHttpMethod())
-                        .description(r.getDescription())
-                        .action(r.getAction())
-                        .active(r.getResourceActive())
-                        .build();
+        Menu menu = Menu.builder()
+                .code(request.getCode())
+                .name(request.getName())
+                .sortOrder(request.getSortOrder())
+                .active(request.isActive())
+                .build();
 
-                menu.getResources().add(res);
+        if (request.getParentId() != null) {
+            Menu parent = menuRepository.findById(request.getParentId())
+                    .orElseThrow(() -> new CustomBusinessException(
+                            ErrorCode.MENU_NOT_FOUND.getCode(),
+                            ErrorCode.MENU_NOT_FOUND.getMessage()
+                    ));
+            menu.setParent(parent);
+        } else {
+            menu.setParent(null);
+        }
+
+        if (!request.getResourceIds().isEmpty()) {
+            Set<Resource> resources = new HashSet<>(
+                    resourceRepository.findAllById(request.getResourceIds())
+            );
+            menu.setResources(resources);
+        }
+
+        menuRepository.save(menu);
+
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    @Override
+    public void updateMenu(Long mid, MenuRequest request) {
+        Menu menu = menuRepository.findById(mid)
+                .orElseThrow(() -> new CustomBusinessException(
+                        ErrorCode.MENU_NOT_FOUND.getCode(),
+                        ErrorCode.MENU_NOT_FOUND.getMessage()
+                ));
+
+        menu.setCode(request.getCode());
+        menu.setName(request.getName());
+        menu.setSortOrder(request.getSortOrder());
+        menu.setActive(request.isActive());
+
+        if (request.getParentId() == null) {
+            menu.setParent(null);
+        } else {
+            if (menu.getParent() == null || !menu.getParent().getId().equals(request.getParentId())) {
+
+                Menu parent = menuRepository.findById(request.getParentId())
+                        .orElseThrow(() -> new CustomBusinessException(
+                                ErrorCode.MENU_NOT_FOUND.getCode(),
+                                ErrorCode.MENU_NOT_FOUND.getMessage()
+                        ));
+
+                menu.setParent(parent);
             }
         }
 
-        return new ArrayList<>(map.values());
+        if (!request.getResourceIds().isEmpty()) {
+            Set<Resource> resources = new HashSet<>(
+                    resourceRepository.findAllById(request.getResourceIds())
+            );
+            menu.setResources(resources);
+        }
+
+        menuRepository.save(menu);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    @Override
+    public void deleteMenu(Long mid) {
+        Menu menu = menuRepository.findById(mid)
+                .orElseThrow(() -> new CustomBusinessException(
+                        ErrorCode.MENU_NOT_FOUND.getCode(),
+                        ErrorCode.MENU_NOT_FOUND.getMessage()
+                ));
+
+        menu.setDeleted(true);
+        menuRepository.save(menu);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    @Override
+    public void assignMenuToRole(Long rid, AssignMenuRequest request) {
+        roleMenuRepository.upsertRoleMenu(
+                rid,
+                request.getMenuId(),
+                request.getBitmask()
+        );
     }
 
 

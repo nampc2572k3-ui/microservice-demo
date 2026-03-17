@@ -1,8 +1,7 @@
 package com.example.demo.domain.model.dto.response;
 
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
+import com.example.demo.domain.model.dto.projection.MenuResourceFlatProjection;
+import lombok.*;
 
 @Getter
 @Setter
@@ -14,4 +13,15 @@ public class ResourceResponse {
     private String description;
     private String action;
     private boolean active;
+
+    public static ResourceResponse from(MenuResourceFlatProjection r) {
+        return ResourceResponse.builder()
+                .id(r.getResourceId())
+                .pathPattern(r.getPathPattern())
+                .httpMethod(r.getHttpMethod())
+                .description(r.getDescription())
+                .action(r.getAction())
+                .active(r.getResourceActive())
+                .build();
+    }
 }

@@ -13,4 +13,6 @@ public interface RoleService {
     void assignRole(String accId, @Valid AssignRoleRequest request);
 
     void revokeRole(String accId, Long roleId);
+
+    List<RoleResponse> getAll();
 }

@@ -1,6 +1,6 @@
 package com.example.demo.common.exception.handler;
 
-import com.example.demo.domain.model.dto.response.BaseResponse;
+import com.example.demo.domain.model.dto.response.common.BaseResponse;
 import com.example.demo.common.exception.CustomBusinessException;
 import com.example.demo.common.utils.ResponseUtils;
 import jakarta.servlet.http.HttpServletRequest;

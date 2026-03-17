@@ -24,4 +24,17 @@ public interface RoleRepository extends JpaRepository<Role, Long> {
             WHERE ar.accountId = :accId
             """)
     List<RoleResponse> findRolesByAccountId(@Param("accId") String accId);
+
+
+    @Query("""
+                SELECT new com.example.demo.domain.model.dto.response.RoleResponse(
+                    r.id,
+                    r.name,
+                    r.description,
+                    r.system
+                )
+                FROM Role r
+                WHERE r.isDeleted = false
+            """)
+    List<RoleResponse> findAllRoles();
 }

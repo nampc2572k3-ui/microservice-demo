@@ -2,11 +2,6 @@ package com.example.demo.domain.model.dto.projection;
 
 public interface MenuResourceFlatProjection {
     Long getMenuId();
-    String getMenuCode();
-    String getMenuName();
-    Integer getSortOrder();
-    Boolean getActive();
-    Long getParentId();
 
     Long getResourceId();
     String getPathPattern();
@@ -14,4 +9,6 @@ public interface MenuResourceFlatProjection {
     String getDescription();
     String getAction();
     Boolean getResourceActive();
+
+
 }

@@ -1,7 +1,7 @@
 package com.example.demo.domain.controller;
 
 import com.example.demo.common.utils.ResponseUtils;
-import com.example.demo.domain.model.dto.response.BaseResponse;
+import com.example.demo.domain.model.dto.response.common.BaseResponse;
 import com.example.demo.domain.model.dto.response.MenuTreeResponse;
 import com.example.demo.domain.service.MenuService;
 import lombok.RequiredArgsConstructor;
