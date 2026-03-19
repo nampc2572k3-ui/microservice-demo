@@ -14,11 +14,11 @@ import com.example.demo.domain.model.dto.response.MenuTreeResponse;
 import com.example.demo.domain.model.dto.response.ResourceResponse;
 import com.example.demo.domain.model.entity.Menu;
 import com.example.demo.domain.model.entity.Resource;
-import com.example.demo.domain.model.entity.RoleMenu;
 import com.example.demo.domain.repository.MenuRepository;
 import com.example.demo.domain.repository.ResourceRepository;
 import com.example.demo.domain.repository.RoleMenuRepository;
 import com.example.demo.domain.service.MenuService;
+import com.example.demo.domain.service.cache.PermissionCacheService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -36,19 +36,27 @@ import java.util.stream.Collectors;
 public class MenuServiceImpl implements MenuService {
 
     private final MenuRepository menuRepository;
-    private final MenuHelper menuHelper;
     private final ResourceRepository resourceRepository;
     private final RoleMenuRepository roleMenuRepository;
+    private final PermissionCacheService permissionCacheService;
 
     @Transactional(readOnly = true)
     @Override
     public List<MenuTreeResponse> getMenuTreeByAccount(String accId) {
+
+        Optional<List<MenuTreeResponse>> cached = permissionCacheService.getMenuTree(accId);
+        if (cached.isPresent()) return cached.get();
+
         List<MenuFlatProjection> daos =
                 menuRepository.findMenuByAccount(accId);
 
         log.debug("MenuFlatProjection for account {}: {}", accId, daos);
 
-        return menuHelper.buildMenuTree(daos);
+        List<MenuTreeResponse> tree = MenuHelper.buildMenuTree(daos);
+
+        permissionCacheService.putMenuTree(accId, tree);
+
+        return tree;
     }
 
     @Transactional(readOnly = true)

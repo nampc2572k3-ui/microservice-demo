@@ -2,6 +2,7 @@ package com.example.demo.domain.service.impl;
 
 import com.example.demo.common.constant.ErrorCode;
 import com.example.demo.common.exception.CustomBusinessException;
+import com.example.demo.domain.event.PermissionChangedEvent;
 import com.example.demo.domain.model.dto.request.AssignRoleRequest;
 import com.example.demo.domain.model.dto.response.RoleResponse;
 import com.example.demo.domain.model.entity.AccountRole;
@@ -11,6 +12,7 @@ import com.example.demo.domain.repository.RoleRepository;
 import com.example.demo.domain.service.RoleService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +25,7 @@ public class RoleServiceImpl implements RoleService {
 
     private final RoleRepository roleRepository;
     private final AccountRoleRepository accountRoleRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional(readOnly = true)
     @Override
@@ -43,8 +46,8 @@ public class RoleServiceImpl implements RoleService {
 
         accountRoleRepository.insertIgnore(accId, role.getId());
 
-        // Publish event để cache invalidation
-        // todo: publish event here
+        // Publish event cache invalidation
+        eventPublisher.publishEvent(new PermissionChangedEvent(accId));
 
     }
 
@@ -59,8 +62,8 @@ public class RoleServiceImpl implements RoleService {
 
         accountRoleRepository.revokeRole(accId, roleId);
 
-        // Publish event để cache invalidation
-        // todo: publish event here
+        // Publish event cache invalidation
+        eventPublisher.publishEvent(new PermissionChangedEvent(accId));
 
     }
 

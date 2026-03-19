@@ -9,7 +9,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public enum ActionType {
     READ(1),
+
+    // create, update
     MODIFY(2),
+
     DELETE(4);
 
     private int value;

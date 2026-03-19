@@ -1,12 +1,14 @@
 package com.example.demo.domain.repository;
 
 import com.example.demo.domain.model.dto.projection.MenuResourceFlatProjection;
+import com.example.demo.domain.model.dto.projection.ResourcePermissionProjection;
 import com.example.demo.domain.model.dto.response.ResourceResponse;
 import com.example.demo.domain.model.entity.Resource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -48,4 +50,18 @@ public interface ResourceRepository extends JpaRepository<Resource, Long> {
     List<MenuResourceFlatProjection> findResourcesByMenuIds(List<Long> menuIds);
 
     boolean existsByHttpMethodAndPathPattern(String httpMethod, String pathPattern);
+
+
+    @Query(value = """
+        SELECT r.path_pattern AS pathPattern,
+               r.http_method AS httpMethod,
+               rm.bitmask AS bitmask
+        FROM account_roles ar
+        JOIN role_menus rm ON ar.role_id = rm.role_id
+        JOIN menus m ON rm.menu_id = m.id
+        JOIN menu_resources mr ON m.id = mr.menu_id
+        JOIN resources r ON rm.resource_id = r.id
+        WHERE ar.account_id = :accId
+    """, nativeQuery = true)
+    List<ResourcePermissionProjection> findAllByAccount(@Param("accId") String accId);
 }

@@ -55,5 +55,4 @@ public class CustomControllerExceptionAdvice {
         return ResponseEntity.status(e.getErrorCode()).body(response);
     }
 
-
 }

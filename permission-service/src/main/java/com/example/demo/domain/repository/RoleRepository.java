@@ -37,4 +37,22 @@ public interface RoleRepository extends JpaRepository<Role, Long> {
                 WHERE r.isDeleted = false
             """)
     List<RoleResponse> findAllRoles();
+
+
+    @Query(value = """
+                SELECT COALESCE(BIT_OR(rm.bitmask), 0)
+                FROM account_roles ar
+                JOIN role_menus rm ON ar.role_id = rm.role_id
+                JOIN menus m ON rm.menu_id = m.id
+                JOIN menu_resources mr ON m.id = mr.menu_id
+                JOIN resources r ON mr.resource_id = r.id
+                WHERE ar.account_id = :accId
+                  AND ar.is_deleted = false
+                  AND r.path_pattern = :path
+                  AND r.http_method = :method
+            """, nativeQuery = true)
+    Integer getMergedBitmask(String accId, String path, String method);
+
+
+
 }

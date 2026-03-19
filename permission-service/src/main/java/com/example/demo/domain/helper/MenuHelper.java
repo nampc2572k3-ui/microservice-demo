@@ -3,7 +3,6 @@ package com.example.demo.domain.helper;
 import com.example.demo.domain.model.dto.projection.MenuFlatProjection;
 import com.example.demo.domain.model.dto.response.MenuTreeResponse;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,10 +11,9 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Slf4j
-@Component
 public class MenuHelper {
 
-    public List<MenuTreeResponse> buildMenuTree(List<MenuFlatProjection> daos) {
+    public static List<MenuTreeResponse> buildMenuTree(List<MenuFlatProjection> daos) {
 
         Map<Long, MenuTreeResponse> map = daos.stream()
                 .map(d -> MenuTreeResponse.builder()

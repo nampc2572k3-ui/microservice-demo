@@ -12,7 +12,6 @@ public enum ErrorCode {
     ROLE_NOT_FOUND(404, "Role Not Found"),
     ROLE_UNASSIGNED(400, "Role Unassigned"),
 
-
     // menu
     MENU_CODE_ALREADY_EXIST(409, "Menu Code Already Exist"),
     MENU_NOT_FOUND(404, "Menu Not Found"),
@@ -22,6 +21,12 @@ public enum ErrorCode {
     RESOURCE_ALREADY_EXISTS(409, "Resource Already Exists"),
     RESOURCE_NOT_FOUND(404, "Resource Not Found"),
 
+    // permission
+    UNAUTHORIZED_INTERNAL_CALL(401, "Unauthorized Internal Call"),
+
+
+    // cache
+    CACHE_DESERIALIZATION_ERROR(500, "Cannot convert cache value to object"),
 
     INTERNAL_SEVER_ERROR(500, "Internal Server Error");
 
