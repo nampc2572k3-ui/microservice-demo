@@ -9,7 +9,9 @@ import com.example.demo.domain.model.entity.AccountRole;
 import com.example.demo.domain.model.entity.Role;
 import com.example.demo.domain.repository.AccountRoleRepository;
 import com.example.demo.domain.repository.RoleRepository;
+import com.example.demo.domain.service.CacheService;
 import com.example.demo.domain.service.RoleService;
+import com.example.demo.domain.service.cache.RoleCacheService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -17,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -26,12 +29,23 @@ public class RoleServiceImpl implements RoleService {
     private final RoleRepository roleRepository;
     private final AccountRoleRepository accountRoleRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final RoleCacheService roleCacheService;
+    private final CacheService cacheService;
 
     @Transactional(readOnly = true)
     @Override
     public List<RoleResponse> getRolesByAccount(String accId) {
 
-        return roleRepository.findRolesByAccountId(accId);
+        Optional<List<RoleResponse>> cached = roleCacheService.get(accId);
+        if (cached.isPresent()) return cached.get();
+
+        List<RoleResponse> roles = roleRepository.findRolesByAccountId(accId);
+        String version = cacheService.getOrInitVersion(accId);
+
+        roleCacheService.put(accId, version, roles);
+
+        return roles;
+
     }
 
     @Transactional(rollbackFor = Exception.class)

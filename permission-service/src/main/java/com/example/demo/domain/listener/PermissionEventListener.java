@@ -1,7 +1,7 @@
 package com.example.demo.domain.listener;
 
 import com.example.demo.domain.event.PermissionChangedEvent;
-import com.example.demo.domain.service.cache.PermissionCacheService;
+import com.example.demo.domain.service.cache.common.CacheWarmupService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
@@ -12,12 +12,17 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class PermissionEventListener {
 
-    private final PermissionCacheService permissionCacheService;
+    private final CacheWarmupService cacheWarmupService;
+
 
     @EventListener
     public void onPermissionChanged(PermissionChangedEvent event) {
-        log.info("Permission changed for account {}, evicting cache", event.accId());
-        permissionCacheService.evictAccount(event.accId());
+
+        String accId = event.accId();
+
+        log.info("Permission changed for account {}, triggering refresh", accId);
+
+        cacheWarmupService.refreshAsync(accId);
     }
 
 }

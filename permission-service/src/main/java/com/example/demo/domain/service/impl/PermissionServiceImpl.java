@@ -3,6 +3,7 @@ package com.example.demo.domain.service.impl;
 import com.example.demo.domain.helper.PermissionHelper;
 import com.example.demo.domain.model.dto.response.PermissionCheckResponse;
 import com.example.demo.domain.repository.RoleRepository;
+import com.example.demo.domain.service.CacheService;
 import com.example.demo.domain.service.PermissionService;
 import com.example.demo.domain.service.cache.PermissionCacheService;
 import lombok.RequiredArgsConstructor;
@@ -19,37 +20,34 @@ public class PermissionServiceImpl implements PermissionService {
 
     private final PermissionCacheService permissionCacheService;
     private final RoleRepository roleRepository;
+    private final CacheService cacheService;
 
 
     @Override
     public PermissionCheckResponse check(String accountId, String path, String method, String secret) {
-        PermissionHelper.validateInternalSecret(secret);
 
+        PermissionHelper.validateInternalSecret(secret);
         String normalizedPath = PermissionHelper.normalizePath(path);
 
         Optional<PermissionCheckResponse> cached =
-                permissionCacheService.getPermissionCheck(accountId, normalizedPath, method);
-        if (cached.isPresent()) {
-            return cached.get();
-        }
+                permissionCacheService.get(accountId, normalizedPath, method);
 
-        Integer mergedBitmask = roleRepository.getMergedBitmask(accountId, normalizedPath, method);
-        log.info("Merged bitmask for accountId={}, path={}, method={} is {}", accountId, path, method, mergedBitmask);
+        if (cached.isPresent()) return cached.get();
 
-        PermissionCheckResponse response;
+        Integer bitmask = roleRepository.getMergedBitmask(accountId, normalizedPath, method);
 
-        if (mergedBitmask == null || mergedBitmask == 0) {
-            response = PermissionCheckResponse.deny("NO_PERMISSION");
-        } else if (PermissionHelper.hasPermission(mergedBitmask, method)) {
-            response = PermissionCheckResponse.allow("OK");
-        } else {
-            response = PermissionCheckResponse.deny("NO_PERMISSION");
-        }
+        PermissionCheckResponse response =
+                (bitmask == null || bitmask == 0)
+                        ? PermissionCheckResponse.deny("NO_PERMISSION")
+                        : PermissionHelper.hasPermission(bitmask, method)
+                        ? PermissionCheckResponse.allow("OK")
+                        : PermissionCheckResponse.deny("NO_PERMISSION");
 
-        permissionCacheService.putPermissionCheck(accountId, normalizedPath, method, response);
+        String version = cacheService.getOrInitVersion(accountId);
+
+        permissionCacheService.put(accountId, normalizedPath, method, version, response);
 
         return response;
-
     }
 
 

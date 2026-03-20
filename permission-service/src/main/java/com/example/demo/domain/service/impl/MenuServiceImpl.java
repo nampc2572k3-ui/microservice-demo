@@ -17,8 +17,9 @@ import com.example.demo.domain.model.entity.Resource;
 import com.example.demo.domain.repository.MenuRepository;
 import com.example.demo.domain.repository.ResourceRepository;
 import com.example.demo.domain.repository.RoleMenuRepository;
+import com.example.demo.domain.service.CacheService;
 import com.example.demo.domain.service.MenuService;
-import com.example.demo.domain.service.cache.PermissionCacheService;
+import com.example.demo.domain.service.cache.MenuCacheService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -38,23 +39,22 @@ public class MenuServiceImpl implements MenuService {
     private final MenuRepository menuRepository;
     private final ResourceRepository resourceRepository;
     private final RoleMenuRepository roleMenuRepository;
-    private final PermissionCacheService permissionCacheService;
+    private final MenuCacheService menuCacheService;
+    private final CacheService cacheService;
 
     @Transactional(readOnly = true)
     @Override
     public List<MenuTreeResponse> getMenuTreeByAccount(String accId) {
 
-        Optional<List<MenuTreeResponse>> cached = permissionCacheService.getMenuTree(accId);
+        Optional<List<MenuTreeResponse>> cached = menuCacheService.get(accId);
         if (cached.isPresent()) return cached.get();
 
-        List<MenuFlatProjection> daos =
-                menuRepository.findMenuByAccount(accId);
+        List<MenuTreeResponse> tree = MenuHelper.buildMenuTree(
+                menuRepository.findMenuByAccount(accId)
+        );
 
-        log.debug("MenuFlatProjection for account {}: {}", accId, daos);
-
-        List<MenuTreeResponse> tree = MenuHelper.buildMenuTree(daos);
-
-        permissionCacheService.putMenuTree(accId, tree);
+        String version = cacheService.getOrInitVersion(accId);
+        menuCacheService.put(accId, version, tree);
 
         return tree;
     }
