@@ -26,6 +26,8 @@ public class MenuHelper {
                         .build())
                 .collect(Collectors.toMap(MenuTreeResponse::getId, Function.identity()));
 
+        log.info("Converted flat menu list to map: {}", map);
+
         List<MenuTreeResponse> roots = new ArrayList<>();
 
         for (MenuTreeResponse node : map.values()) {

@@ -2,20 +2,42 @@ name: microservice
 
 services:
 
-  # Authentication db
+  # permission db
   permission-mysql:
     image: mysql:8.0
-    container_name: auth
+    container_name: permission
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: ${AUTH_MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${AUTH_MYSQL_DATABASE}
-      MYSQL_USER: ${AUTH_MYSQL_USER}
-      MYSQL_PASSWORD: ${AUTH_MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${PERMISSION_MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${PERMISSION_MYSQL_DATABASE}
+      MYSQL_USER: ${PERMISSION_MYSQL_USER}
+      MYSQL_PASSWORD: ${PERMISSION_MYSQL_PASSWORD}
+    command: >
+      --server-id=3
+      --log-bin=mysql-bin
+      --binlog-format=ROW
+    volumes:
+      - permission-mysql-data:/var/lib/mysql
     ports:
-      - "${AUTH_DB_PORT}:3306"
+      - "${PERMISSION_DB_PORT}:3306"
 
-  # Redis
+  permission-mysql-replica:
+    image: mysql:8.0
+    container_name: permission-replica
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${PERMISSION_MYSQL_ROOT_PASSWORD}
+    command: >
+      --server-id=4
+      --relay-log=relay-log
+    depends_on:
+      - permission-mysql
+    volumes:
+      - permission-mysql-replica-data:/var/lib/mysql
+    ports:
+      - "3311:3306"
+
+  # redis
   redis:
     image: redis:7.0
     container_name: microservice-redis
@@ -25,16 +47,130 @@ services:
     env_file:
       - .env
 
-  # permission db
+    # auth db
   auth-mysql:
     image: mysql:8.0
-    container_name: permission
+    container_name: auth
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: ${PERMISSION_MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${PERMISSION_MYSQL_DATABASE}
-      MYSQL_USER: ${PERMISSION_MYSQL_USER}
-      MYSQL_PASSWORD: ${PERMISSION_MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${AUTH_MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${AUTH_MYSQL_DATABASE}
+      MYSQL_USER: ${AUTH_MYSQL_USER}
+      MYSQL_PASSWORD: ${AUTH_MYSQL_PASSWORD}
+    command: >
+      --server-id=1
+      --log-bin=mysql-bin
+      --binlog-format=ROW
+    volumes:
+      - auth-mysql-data:/var/lib/mysql
     ports:
-      - "${PERMISSION_DB_PORT}:3306"
+      - "${AUTH_DB_PORT}:3306"
 
+  auth-mysql-replica:
+    image: mysql:8.0
+    container_name: auth-replica
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${AUTH_MYSQL_ROOT_PASSWORD}
+    command: >
+      --server-id=2
+      --relay-log=relay-log
+    depends_on:
+      - auth-mysql
+    volumes:
+      - auth-mysql-replica-data:/var/lib/mysql
+    ports:
+      - "3310:3306"
+
+  # kafka
+  kafka-1:
+    image: ${KAFKA_IMAGE}
+    container_name: kafka-1
+    ports:
+      - "${KAFKA_PORT_1}:9092"
+    volumes:
+      - kafka1-data:/var/lib/kafka/data
+    environment:
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_NODE_ID: 1
+      KAFKA_CLUSTER_ID: ${KAFKA_CLUSTER_ID}
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-1:19092,2@kafka-2:19093,3@kafka-3:19094
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:19092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-1:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+
+  kafka-2:
+    image: ${KAFKA_IMAGE}
+    container_name: kafka-2
+    ports:
+      - "${KAFKA_PORT_2}:9092"
+    volumes:
+      - kafka2-data:/var/lib/kafka/data
+    environment:
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_NODE_ID: 2
+      KAFKA_CLUSTER_ID: ${KAFKA_CLUSTER_ID}
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-1:19092,2@kafka-2:19093,3@kafka-3:19094
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:19093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-2:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+
+  kafka-3:
+    image: ${KAFKA_IMAGE}
+    container_name: kafka-3
+    ports:
+      - "${KAFKA_PORT_3}:9092"
+    volumes:
+      - kafka3-data:/var/lib/kafka/data
+    environment:
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_NODE_ID: 3
+      KAFKA_CLUSTER_ID: ${KAFKA_CLUSTER_ID}
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-1:19092,2@kafka-2:19093,3@kafka-3:19094
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:19094
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-3:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+
+  schema-registry:
+    image: ${SCHEMA_REGISTRY_IMAGE}
+    container_name: schema-registry
+    depends_on:
+      - kafka-1
+      - kafka-2
+      - kafka-3
+    ports:
+      - "${SCHEMA_REGISTRY_PORT}:8081"
+    environment:
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: kafka-1:9092,kafka-2:9092,kafka-3:9092
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
+
+  kafka-ui:
+    image: ${KAFKA_UI_IMAGE}
+    container_name: kafka-ui
+    depends_on:
+      - kafka-1
+      - kafka-2
+      - kafka-3
+      - schema-registry
+    ports:
+      - "${KAFKA_UI_PORT}:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local-kraft
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka-1:9092,kafka-2:9092,kafka-3:9092
+      KAFKA_CLUSTERS_0_SCHEMAREGISTRY: http://schema-registry:8081
+
+
+volumes:
+  auth-mysql-data:
+  auth-mysql-replica-data:
+  permission-mysql-data:
+  permission-mysql-replica-data:
+
+  Kafka1-data:
+  Kafka2-data:
+  Kafka3-data:

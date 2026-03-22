@@ -27,7 +27,7 @@ public class AccountController {
 
     @PostMapping("/{accId}/roles")
     public ResponseEntity<BaseResponse<Void>> assignRoles(
-            @PathVariable("accId") String accId,
+            @PathVariable String accId,
             @RequestBody @Valid AssignRoleRequest request
     ) {
         roleService.assignRole(accId, request);

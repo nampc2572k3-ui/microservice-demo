@@ -3,8 +3,6 @@ package com.example.demo.domain.model.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.LocalDateTime;
-
 @Entity
 @Table(name = "role_menus",
         uniqueConstraints = @UniqueConstraint(

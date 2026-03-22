@@ -35,6 +35,4 @@ public class RoleController {
         menuService.assignMenuToRole(rid, request);
         return ResponseEntity.ok(ResponseUtils.success("Assign menu successfully"));
     }
-
-
 }
