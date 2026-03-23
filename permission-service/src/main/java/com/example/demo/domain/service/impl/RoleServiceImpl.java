@@ -2,7 +2,7 @@ package com.example.demo.domain.service.impl;
 
 import com.example.demo.common.constant.ErrorCode;
 import com.example.demo.common.exception.CustomBusinessException;
-import com.example.demo.domain.event.PermissionChangedEvent;
+import com.example.demo.domain.event.internal.RoleAssignedTransactionalEvent;
 import com.example.demo.domain.model.dto.request.AssignRoleRequest;
 import com.example.demo.domain.model.dto.response.RoleResponse;
 import com.example.demo.domain.model.entity.AccountRole;
@@ -61,7 +61,7 @@ public class RoleServiceImpl implements RoleService {
         accountRoleRepository.insertIgnore(accId, role.getId());
 
         // Publish event cache invalidation
-        eventPublisher.publishEvent(new PermissionChangedEvent(accId));
+        eventPublisher.publishEvent( new RoleAssignedTransactionalEvent(this, accId, role) );
 
     }
 
@@ -77,7 +77,7 @@ public class RoleServiceImpl implements RoleService {
         accountRoleRepository.revokeRole(accId, roleId);
 
         // Publish event cache invalidation
-        eventPublisher.publishEvent(new PermissionChangedEvent(accId));
+        eventPublisher.publishEvent( new RoleAssignedTransactionalEvent(this, accId, accountRole.getRole()) );
 
     }
 

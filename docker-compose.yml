@@ -171,6 +171,6 @@ volumes:
   permission-mysql-data:
   permission-mysql-replica-data:
 
-  Kafka1-data:
-  Kafka2-data:
-  Kafka3-data:
+  kafka1-data:
+  kafka2-data:
+  kafka3-data:
