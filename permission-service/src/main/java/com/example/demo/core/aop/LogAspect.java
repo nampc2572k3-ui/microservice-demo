@@ -1,6 +1,6 @@
 package com.example.demo.core.aop;
 
-import com.example.demo.core.context.UserContext;
+import com.example.demo.infrastructure.context.UserContext;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,7 +25,7 @@ public class LogAspect {
     private static final Pattern JWT_PATTERN =
             Pattern.compile("^[A-Za-z0-9-_]+\\.[A-Za-z0-9-_]+\\.[A-Za-z0-9-_]+$");
 
-    // Chỉ log controller + service trong package com.example.demo
+
     private static final String POINTCUT =
             "execution(* com.example.demo..controller..*(..)) || " +
                     "execution(* com.example.demo..service..*(..))";

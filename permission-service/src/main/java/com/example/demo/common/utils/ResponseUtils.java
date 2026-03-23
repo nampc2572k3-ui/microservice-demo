@@ -1,6 +1,6 @@
 package com.example.demo.common.utils;
 
-import com.example.demo.domain.model.dto.response.common.BaseResponse;
+import com.example.demo.core.application.dto.response.common.BaseResponse;
 import org.springframework.data.domain.Page;
 
 public class ResponseUtils {
