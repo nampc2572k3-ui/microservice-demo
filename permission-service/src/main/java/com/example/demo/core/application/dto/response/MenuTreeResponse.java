@@ -1,0 +1,42 @@
+package com.example.demo.core.application.dto.response;
+
+import com.example.demo.common.constant.ErrorCode;
+import com.example.demo.common.exception.CustomBusinessException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.Setter;
+
+import java.util.List;
+
+@Getter
+@Setter
+@Builder
+public class MenuTreeResponse {
+
+    private Long id;
+    private String code;
+    private String name;
+    private Integer sortOrder;
+    private Long parentId;
+
+    private Integer bitmask;
+
+    private List<MenuTreeResponse> children;
+
+
+    public static List<MenuTreeResponse> fromObject(Object value) {
+        if (value instanceof List<?> list) {
+            ObjectMapper mapper = new ObjectMapper();
+            return list.stream()
+                    .map(item -> mapper.convertValue(item, MenuTreeResponse.class))
+                    .toList();
+        }
+
+        throw new CustomBusinessException(
+                ErrorCode.CACHE_DESERIALIZATION_ERROR.getCode(),
+                ErrorCode.CACHE_DESERIALIZATION_ERROR.getMessage()
+        );
+    }
+
+}
