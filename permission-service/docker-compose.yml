@@ -1,0 +1,46 @@
+name: permission-service
+
+services:
+
+  # permission db
+  permission-mysql-master:
+    image: mysql:8.0
+    container_name: permission-master
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${PERMISSION_MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${PERMISSION_MYSQL_DATABASE}
+      MYSQL_USER: ${PERMISSION_MYSQL_USER}
+      MYSQL_PASSWORD: ${PERMISSION_MYSQL_PASSWORD}
+    command: >
+      --server-id=1
+      --log-bin=mysql-bin
+      --binlog-format=ROW
+      --gtid-mode=ON
+      --enforce-gtid-consistency=ON
+    volumes:
+      - ./docker/mysql/master/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "${PERMISSION_DB_PORT}:3306"
+
+  permission-mysql-replica:
+    image: mysql:8.0
+    container_name: permission-replica
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${PERMISSION_MYSQL_ROOT_PASSWORD}
+    command: >
+      --server-id=2
+      --relay-log=relay-log
+      --gtid-mode=ON
+      --enforce-gtid-consistency=ON
+    depends_on:
+      - permission-mysql-master
+    volumes:
+      - ./docker/mysql/slave/init.sh:/docker-entrypoint-initdb.d/init.sh
+    ports:
+      - "${PERMISSION_DB_REPLICA_PORT_PORT}:3306"
+
+volumes:
+  permission-mysql-data:
+  permission-mysql-replica-data:

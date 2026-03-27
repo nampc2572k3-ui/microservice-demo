@@ -4,6 +4,9 @@ import com.example.demo.common.constant.ErrorCode;
 import com.example.demo.common.exception.CustomBusinessException;
 import com.example.demo.core.domain.model.enums.ActionType;
 
+import java.util.Arrays;
+import java.util.List;
+
 public class PermissionHelper {
 
     public static String normalizePath(String path) {
@@ -33,6 +36,13 @@ public class PermissionHelper {
                     ErrorCode.UNAUTHORIZED_INTERNAL_CALL.getMessage()
             );
         }
+    }
+
+    public static List<String> mapBitmaskToPermissions(int bitmask) {
+        return Arrays.stream(ActionType.values())
+                .filter(action -> (bitmask & action.getValue()) != 0)
+                .map(Enum::name)
+                .toList();
     }
 
 }

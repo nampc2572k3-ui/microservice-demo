@@ -24,7 +24,7 @@ src/main/java/com/example/demo/
 │   ├── aop/                             # Aspect-Oriented Programming components
 │   ├── application/                     # Business logic and use cases
 │   ├── domain/                          # Domain models (entities)
-│   └── intergration/                    # External service integrations
+│   └── intergration/                    # External service integrations (NOTE: Folder has typo "intergration" instead of "integration")
 ├── infrastructure/                      # Infrastructure layer (DB, caching, Kafka)
 └── common/                              # Common utilities and components
     ├── constant/                        # Application constants
@@ -87,8 +87,8 @@ Configure these variables via a `.env` file or your environment management syste
 ### Redis Configuration
 - `REDIS_HOST` — Redis host (default: `localhost`)
 - `REDIS_PORT` — Redis port (default: `6379`)
-- `REDIS_TIMEOUT` — Connection timeout in seconds (optional)
-- `REDIS_DATABASE` — Database index (optional, default: `0`)
+- `REDIS_TIMEOUT` — Connection timeout in milliseconds (optional)
+- `PERMISSION_REDIS_DATABASE` — Redis database index (optional, default: `0`)
 
 ### Example `.env`
 
@@ -112,7 +112,7 @@ KAFKA_BOOTSTRAP_SERVERS=localhost:9092
 REDIS_HOST=localhost
 REDIS_PORT=6379
 REDIS_TIMEOUT=2000
-REDIS_DATABASE=0
+PERMISSION_REDIS_DATABASE=0
 ```
 
 ## Running Locally
@@ -167,7 +167,7 @@ cd permission-service
 
 ```powershell
 cd permission-service
-.\mvnw.cmd clean build
+.\mvnw.cmd clean package
 ```
 
 ### Run Tests
@@ -184,32 +184,427 @@ cd permission-service
 
 ## API Endpoints
 
-The service typically exposes RESTful endpoints for managing:
-- Roles (CRUD operations)
-- Menus (CRUD operations with hierarchical support)
-- Resources (CRUD operations for API endpoints)
-- Permission mappings (role-menu, role-resource associations)
+The service exposes RESTful endpoints for managing roles, menus, resources, and permissions. 
+All endpoints expect JSON request/response bodies and return a `BaseResponse` wrapper.
 
-### Example Endpoints (typical structure)
-
+### Base URL
 ```
-GET    /permission-service/api/v1/roles           - List all roles
-POST   /permission-service/api/v1/roles           - Create a new role
-GET    /permission-service/api/v1/roles/{id}      - Get role details
-PUT    /permission-service/api/v1/roles/{id}      - Update a role
-DELETE /permission-service/api/v1/roles/{id}      - Delete a role
+http://localhost:8003/permission-service
+```
 
-GET    /permission-service/api/v1/menus           - List all menus
-POST   /permission-service/api/v1/menus           - Create a new menu
-GET    /permission-service/api/v1/menus/{id}      - Get menu details
-PUT    /permission-service/api/v1/menus/{id}      - Update a menu
-DELETE /permission-service/api/v1/menus/{id}      - Delete a menu
+### Response Format
 
-GET    /permission-service/api/v1/resources       - List all resources
-POST   /permission-service/api/v1/resources       - Create a new resource
-GET    /permission-service/api/v1/resources/{id}  - Get resource details
-PUT    /permission-service/api/v1/resources/{id}  - Update a resource
-DELETE /permission-service/api/v1/resources/{id}  - Delete a resource
+All successful responses follow this format:
+```json
+{
+  "code": 200,
+  "message": "Success message",
+  "data": { /* response data */ },
+  "timestamp": "2026-03-25T10:30:00Z"
+}
+```
+
+---
+
+### 1. Role Management
+
+#### Get All Roles
+```http
+GET /roles
+```
+- **Description**: Retrieve all available roles
+- **Response**: List of `RoleResponse` objects
+- **Example Response**:
+  ```json
+  {
+    "code": 200,
+    "message": "Get data successfully",
+    "data": [
+      {
+        "id": 1,
+        "name": "ADMIN",
+        "description": "Administrator role",
+        "isSystem": true
+      },
+      {
+        "id": 2,
+        "name": "USER",
+        "description": "Standard user role",
+        "isSystem": false
+      }
+    ]
+  }
+  ```
+
+#### Assign Menu to Role
+```http
+POST /roles/{rid}/menus
+Content-Type: application/json
+
+{
+  "menuIds": [1, 2, 3]
+}
+```
+- **Description**: Assign one or more menus to a specific role
+- **Parameters**:
+  - `rid` (path): Role ID
+- **Request Body**: `AssignMenuRequest` with list of menu IDs
+- **Response**: Success message
+
+---
+
+### 2. Menu Management
+
+#### Get All Menus (Paginated)
+```http
+GET /menus?page=0&size=10&sort=id,desc
+```
+- **Description**: Retrieve menus with pagination support
+- **Query Parameters**:
+  - `page` (optional): Page number (0-indexed, default: 0)
+  - `size` (optional): Page size (default: 10)
+  - `sort` (optional): Sort criteria (e.g., `id,desc` or `name,asc`)
+- **Response**: Paginated list of `MenuResponse` objects with metadata
+- **Example Response**:
+  ```json
+  {
+    "code": 200,
+    "message": "Get data successfully",
+    "data": [
+      {
+        "id": 1,
+        "code": "DASHBOARD",
+        "name": "Dashboard",
+        "sortOrder": 1,
+        "isActive": true,
+        "parentId": null
+      },
+      {
+        "id": 2,
+        "code": "USER_MANAGEMENT",
+        "name": "User Management",
+        "sortOrder": 2,
+        "isActive": true,
+        "parentId": null
+      }
+    ],
+    "pageable": {
+      "pageNumber": 0,
+      "pageSize": 10,
+      "totalElements": 25,
+      "totalPages": 3
+    }
+  }
+  ```
+
+#### Create Menu
+```http
+POST /menus
+Content-Type: application/json
+
+{
+  "code": "NEW_MENU",
+  "name": "New Menu",
+  "sortOrder": 5,
+  "isActive": true,
+  "parentId": 1
+}
+```
+- **Description**: Create a new menu item
+- **Request Body**: `MenuRequest` with menu details
+- **Response**: Success message
+
+#### Update Menu
+```http
+PUT /menus/{mid}
+Content-Type: application/json
+
+{
+  "code": "UPDATED_MENU",
+  "name": "Updated Menu Name",
+  "sortOrder": 3,
+  "isActive": true,
+  "parentId": 1
+}
+```
+- **Description**: Update an existing menu
+- **Parameters**:
+  - `mid` (path): Menu ID
+- **Response**: Success message
+
+#### Delete Menu
+```http
+DELETE /menus/{mid}
+```
+- **Description**: Delete (soft delete) a menu
+- **Parameters**:
+  - `mid` (path): Menu ID
+- **Response**: Success message
+
+---
+
+### 3. Resource Management
+
+#### Get All Resources (Paginated)
+```http
+GET /resources?page=0&size=10&sort=id,asc
+```
+- **Description**: Retrieve API resources with pagination
+- **Query Parameters**:
+  - `page` (optional): Page number (default: 0)
+  - `size` (optional): Page size (default: 10)
+  - `sort` (optional): Sort criteria
+- **Response**: Paginated list of `ResourceResponse` objects
+- **Example Response**:
+  ```json
+  {
+    "code": 200,
+    "message": "Get data successfully",
+    "data": [
+      {
+        "id": 1,
+        "path": "/api/v1/users",
+        "method": "GET",
+        "action": "VIEW_USERS",
+        "isActive": true
+      },
+      {
+        "id": 2,
+        "path": "/api/v1/users",
+        "method": "POST",
+        "action": "CREATE_USER",
+        "isActive": true
+      }
+    ],
+    "pageable": {
+      "pageNumber": 0,
+      "pageSize": 10,
+      "totalElements": 45,
+      "totalPages": 5
+    }
+  }
+  ```
+
+#### Create Resource
+```http
+POST /resources
+Content-Type: application/json
+
+{
+  "path": "/api/v1/users/{id}",
+  "method": "PUT",
+  "action": "EDIT_USER"
+}
+```
+- **Description**: Create a new API resource
+- **Request Body**: `ResourceRequest` with resource details
+- **Response**: Success message
+
+#### Update Resource
+```http
+PUT /resources/{rId}
+Content-Type: application/json
+
+{
+  "path": "/api/v1/users/{id}",
+  "method": "PUT",
+  "action": "UPDATE_USER"
+}
+```
+- **Description**: Update an existing resource
+- **Parameters**:
+  - `rId` (path): Resource ID
+- **Response**: Success message
+
+#### Toggle Resource Active Status
+```http
+PATCH /resources/{rId}/toggle
+```
+- **Description**: Toggle the active/inactive status of a resource
+- **Parameters**:
+  - `rId` (path): Resource ID
+- **Response**: Success message
+
+#### Delete Resource
+```http
+DELETE /resources/{rId}
+```
+- **Description**: Delete a resource (soft delete)
+- **Parameters**:
+  - `rId` (path): Resource ID
+- **Response**: Success message
+
+---
+
+### 4. Account & Role Assignment
+
+#### Get Roles by Account
+```http
+GET /accounts/{accId}/roles
+```
+- **Description**: Retrieve all roles assigned to a specific account
+- **Parameters**:
+  - `accId` (path): Account ID (string)
+- **Response**: List of `RoleResponse` objects
+- **Example Response**:
+  ```json
+  {
+    "code": 200,
+    "message": "Get data successfully",
+    "data": [
+      {
+        "id": 1,
+        "name": "ADMIN",
+        "description": "Administrator role",
+        "isSystem": true
+      }
+    ]
+  }
+  ```
+
+#### Assign Role to Account
+```http
+POST /accounts/{accId}/roles
+Content-Type: application/json
+
+{
+  "roleIds": [1, 2]
+}
+```
+- **Description**: Assign one or more roles to an account
+- **Parameters**:
+  - `accId` (path): Account ID (string)
+- **Request Body**: `AssignRoleRequest` with list of role IDs
+- **Response**: Success message
+- **Note**: Publishes `permission.role.assigned` Kafka event
+
+#### Revoke Role from Account
+```http
+DELETE /accounts/{accId}/roles/{roleId}
+```
+- **Description**: Revoke a role from an account
+- **Parameters**:
+  - `accId` (path): Account ID (string)
+  - `roleId` (path): Role ID
+- **Response**: Success message
+- **Note**: Publishes `permission.role.revoked` Kafka event
+
+---
+
+### 5. Permission Checking
+
+#### Check Permission
+```http
+GET /permissions/check?accountId=USER123&path=/api/v1/users&method=GET
+X-Internal-Secret: your-secret-key
+```
+- **Description**: Check if an account has permission to access a resource
+- **Query Parameters**:
+  - `accountId` (required): Account ID
+  - `path` (required): API path to check
+  - `method` (required): HTTP method (GET, POST, PUT, DELETE, PATCH, etc.)
+- **Headers**:
+  - `X-Internal-Secret` (optional): Internal service authentication
+- **Response**: `PermissionCheckResponse` with permission result
+- **Example Response**:
+  ```json
+  {
+    "code": 200,
+    "message": "Permission check completed",
+    "data": {
+      "accountId": "USER123",
+      "path": "/api/v1/users",
+      "method": "GET",
+      "hasPermission": true,
+      "roles": ["USER", "ADMIN"],
+      "checkTime": "2026-03-25T10:30:00Z"
+    }
+  }
+  ```
+
+#### Get Menu Tree by Account
+```http
+GET /permissions/accounts/{accId}/menus
+```
+- **Description**: Get hierarchical menu structure for an account based on assigned roles
+- **Parameters**:
+  - `accId` (path): Account ID (string)
+- **Response**: Hierarchical list of `MenuTreeResponse` objects
+- **Example Response**:
+  ```json
+  {
+    "code": 200,
+    "message": "Get data successfully",
+    "data": [
+      {
+        "id": 1,
+        "code": "DASHBOARD",
+        "name": "Dashboard",
+        "sortOrder": 1,
+        "isActive": true,
+        "children": [
+          {
+            "id": 3,
+            "code": "DASHBOARD_VIEW",
+            "name": "Dashboard View",
+            "sortOrder": 1,
+            "isActive": true,
+            "children": []
+          }
+        ]
+      }
+    ]
+  }
+  ```
+
+#### Get My Menus (Current User)
+```http
+GET /permissions/me/menus
+X-Account-Id: USER123
+```
+- **Description**: Get menu tree for the current authenticated user
+- **Headers**:
+  - `X-Account-Id` (required): Current user's account ID from JWT token
+- **Response**: Hierarchical list of `MenuTreeResponse` objects
+- **Example Response**: Same as above
+
+---
+
+### Error Response Format
+
+When an error occurs, the response format is:
+```json
+{
+  "code": 400,
+  "message": "Error message describing what went wrong",
+  "data": null,
+  "timestamp": "2026-03-25T10:30:00Z"
+}
+```
+
+### Common Error Codes
+
+- **200** — Success
+- **400** — Bad Request (invalid input)
+- **401** — Unauthorized (missing authentication)
+- **403** — Forbidden (insufficient permissions)
+- **404** — Not Found (resource doesn't exist)
+- **409** — Conflict (duplicate entry, constraint violation)
+- **500** — Internal Server Error
+
+---
+
+### Testing API Endpoints
+
+You can test these endpoints using tools like:
+- **Postman** — GUI-based REST client
+- **cURL** — Command-line tool
+- **Thunder Client** — VS Code extension
+
+Example cURL request:
+```bash
+curl -X GET "http://localhost:8003/permission-service/roles" \
+  -H "Content-Type: application/json"
 ```
 
 ## Database Migrations
@@ -231,26 +626,353 @@ Migrations are automatically applied on application startup. See the migration f
 
 ## Caching Strategy
 
-The service uses a two-level caching strategy for optimal performance:
+The service uses a two-level caching strategy for optimal performance and scalability:
 
 ### 1. Local Cache (Caffeine)
-- Fast in-memory caching within the service
-- Used for frequently accessed data (roles, menus)
-- Automatic expiration and refresh
+- **Purpose**: Fast in-memory caching within a single service instance
+- **Scope**: Service-local, not shared across instances
+- **Performance**: Sub-millisecond access time
+- **Use Cases**:
+  - Frequently accessed roles (refreshed every 5 minutes)
+  - Menu hierarchies (refreshed every 10 minutes)
+  - Permission check results (short-lived, 1 minute TTL)
+- **Configuration**:
+  - Max size: 1000 entries per cache
+  - Expire after write: 5-10 minutes (varies by cache type)
+  - Automatic refresh on expiry
 
 ### 2. Distributed Cache (Redis)
-- Shared cache across multiple service instances
-- Used for session data and distributed state
-- Enables cache invalidation across instances
+- **Purpose**: Shared cache across multiple service instances
+- **Scope**: Cluster-wide, enables cache sharing between services
+- **Performance**: Few milliseconds for network I/O
+- **Database**: `PERMISSION_REDIS_DATABASE` (separate DB for data isolation)
+- **Use Cases**:
+  - Cross-instance cache synchronization
+  - Session data for distributed systems
+  - Rate limiting counters
+  - Distributed locks
+
+### Cache Data Structures
+
+**Key Prefix**: `microservice:permission:`
+
+The service uses **version-based cache invalidation** strategy. Each account has a unique version key that changes when permissions are updated, automatically invalidating all related cache entries.
+
+#### 1. Version Key (Master Control)
+```
+Key Format: microservice:permission:version:{accountId}
+Type: String
+TTL: No expiry (managed by application)
+Content: Version identifier (format: v{timestamp}, e.g., "v1234567890123")
+Example Key: microservice:permission:version:user-123
+Purpose: Cache invalidation - when version changes, all cached data for that account becomes stale
+```
+
+#### 2. Permission Check Cache
+```
+Key Format: microservice:permission:check:{accountId}:{version}:{path}:{method}
+Type: String (JSON serialized with expiry metadata)
+TTL: 30 minutes
+Content: Permission check result with auto-refresh mechanism
+Example Key: microservice:permission:check:user-123:v1234567890:GET:/api/users:GET
+```
+
+#### 3. Menu Tree Cache
+```
+Key Format: microservice:permission:menutree:{accountId}:{version}
+Type: String (JSON serialized hierarchical menu structure)
+TTL: 30 minutes
+Content: Hierarchical menu tree based on assigned roles
+Example Key: microservice:permission:menutree:user-123:v1234567890
+```
+
+#### 4. Account Roles Cache
+```
+Key Format: microservice:permission:roles:{accountId}:{version}
+Type: String (JSON array of role objects)
+TTL: 30 minutes
+Content: List of roles assigned to an account
+Example Key: microservice:permission:roles:user-123:v1234567890
+```
+
+#### 5. Refresh Lock Cache
+```
+Key Format: microservice:permission:refresh:lock:{accountId}
+Type: String ("1")
+TTL: Short-lived (prevents concurrent refresh attempts)
+Content: Lock flag to prevent cache stampede
+Example Key: microservice:permission:refresh:lock:user-123
+Purpose: Distributed lock using Redis for cache refresh coordination
+```
+
+### Cache Value Wrapper
+
+All cached data is wrapped in a `CacheValue<T>` object:
+```java
+{
+  "data": { /* actual cached data */ },
+  "expireAt": 1234567890123  // Absolute expiry timestamp in ms
+}
+```
+
+This wrapper enables:
+- **Proactive refresh** — Data refreshed 3 minutes before actual expiry
+- **Type safety** — Generic type information for deserialization
+- **Graceful degradation** — Expired data can be used temporarily if refresh fails
+
+### Cache Invalidation Strategy
+
+The service uses **version-based cache invalidation** for efficiency:
+
+**When a change occurs:**
+1. Generate new version: `v{System.currentTimeMillis()}`
+2. Update: `microservice:permission:version:{accountId}` → new version
+3. Next cache access uses new version key → cache miss → refresh from DB
+4. Old version keys eventually expire (TTL: 30 mins) → automatic cleanup
+
+**This approach avoids:**
+- Pattern matching across millions of keys (slow)
+- Manual key deletion (error-prone)
+- Distributed coordination issues
+
+| Event | Cache Behavior | Version Updated |
+|-------|------|---|
+| Create/Update/Delete Role affecting account | Next request uses new version key → cache miss | Yes, for affected accounts |
+| Create/Update/Delete Menu affecting role | Next request uses new version key → cache miss | Yes, for accounts with that role |
+| Assign Role to Account | Version invalidated immediately | Yes, for that account |
+| Revoke Role from Account | Version invalidated immediately | Yes, for that account |
+
+**Example Flow:**
+```
+User has version: v1000
+GET /permissions/me/menus
+  → Check key: microservice:permission:menutree:user-123:v1000
+  → Cache HIT → Return data
+
+Admin updates a menu the user can see
+  → Update user version: v1000 → v2000 (new timestamp)
+
+User makes next request
+  → Check key: microservice:permission:menutree:user-123:v2000
+  → Cache MISS (old v1000 expired or doesn't match)
+  → Fetch from DB → Cache with new version v2000
+  → Return fresh data
+```
+
+### Redis Connection Pool
+
+Configuration in `Application.yaml`:
+```yaml
+spring.data.redis.lettuce.pool:
+  max-active: 20          # Max connections in pool
+  max-idle: 10            # Max idle connections
+  min-idle: 2             # Min connections to maintain
+```
+
+### Redis CLI Examples
+
+```bash
+# Connect to Redis
+redis-cli
+
+# Select the permission-service database
+select 0  # or ${PERMISSION_REDIS_DATABASE}
+
+# View all permission service keys
+keys microservice:permission:*
+
+# Check account version (master key for invalidation)
+get "microservice:permission:version:user-123"
+
+# Get version and use it to check specific cache
+SET myver 'microservice:permission:version:user-123'
+GET $myver  # Returns version like "v1710000000000"
+GET "microservice:permission:menutree:user-123:$(GET microservice:permission:version:user-123)"
+
+# Check specific cached menus
+get "microservice:permission:menutree:user-123:v1710000000000"
+
+# Check specific cached roles
+get "microservice:permission:roles:user-123:v1710000000000"
+
+# Check permission check cache
+get "microservice:permission:check:user-123:v1710000000000:GET:/api/users"
+
+# Get cache TTL (time to live in seconds)
+ttl "microservice:permission:menutree:user-123:v1710000000000"
+# Returns: -1 (no expiry), -2 (key doesn't exist), or remaining seconds
+
+# Inspect cache value structure (CacheValue wrapper)
+get "microservice:permission:roles:user-123:v1710000000000"
+# Returns JSON like: {"data":[...],"expireAt":1710000300000}
+
+# Get key size in bytes
+memory usage "microservice:permission:roles:user-123:v1710000000000"
+
+# Monitor in real-time
+monitor
+
+# Check connection info
+info
+
+# Find all version keys (to see which accounts have cached data)
+keys "microservice:permission:version:*"
+
+# Clear all permission service caches
+EVAL "return redis.call('del', unpack(redis.call('keys', ARGV[1])))" 0 "microservice:permission:*"
+
+# Clear only cache for one account (safe cleanup)
+EVAL "return redis.call('del', unpack(redis.call('keys', ARGV[1])))" 0 "microservice:permission:*:user-123"
+```
+
+### Cache Performance Tips
+
+1. **Use JSON serialization** — Efficient for complex objects
+2. **Set appropriate TTLs** — Balance between consistency and performance
+3. **Monitor cache hit ratio** — Lower hit rates indicate cache thrashing
+4. **Implement cache warming** — Pre-load frequently accessed data on startup
+5. **Use async cache operations** — Don't block on cache operations
+6. **Implement cache layers** — Local cache for speed, Redis for distribution
 
 ## Event Streaming (Kafka)
 
 The service integrates with Kafka for:
-- Publishing permission change events
-- Subscribing to user and role update events from other services
-- Asynchronous event processing
+- **Publishing** permission change events to other services
+- **Consuming** user and role update events from auth-service
+- **Asynchronous** event processing for eventual consistency
+- **Event-driven** architecture enabling loose coupling between services
 
-Consumer group: `permission-service`
+### Kafka Topics
+
+#### Published Topics (Producer)
+
+| Topic | Description | Event Type | Publish When |
+|-------|-------------|-----------|--------------|
+| `permission.changed` | Permission data has been modified | Generic permission update | Create/update/delete roles, menus, or resources |
+| `permission.role.assigned` | Role assigned to account | Role assignment | After successfully assigning a role to an account |
+| `permission.role.revoked` | Role revoked from account | Role revocation | After successfully revoking a role from an account |
+
+#### Subscribed Topics (Consumer)
+
+| Topic | Description | Consumer Action |
+|-------|-------------|-----------------|
+| `account.created` | New account created in auth-service | (Optional) Initialize default permissions |
+| `account.deleted` | Account deleted from auth-service | Remove all role assignments for that account |
+
+### Consumer Configuration
+
+- **Consumer Group**: `permission-service`
+- **Auto Offset Reset**: `earliest` (process all messages from beginning if offset is lost)
+- **Enable Auto Commit**: `false` (manual commit for reliability)
+- **Deserialization**: JSON format with trusted packages `com.example.demo.domain.event`
+
+### Producer Configuration
+
+- **Acknowledgment Level**: `all` (wait for all in-sync replicas to acknowledge)
+- **Retries**: `3` (retry failed sends up to 3 times)
+- **Serialization**: String key, String value
+- **Idempotence**: `true` (prevent duplicate messages)
+
+### Example Event Messages
+
+#### Permission Changed Event
+```json
+{
+  "eventId": "evt-123456789",
+  "eventType": "PERMISSION_CHANGED",
+  "timestamp": "2026-03-25T10:30:00Z",
+  "source": "permission-service",
+  "resourceId": 45,
+  "resourcePath": "/api/v1/users",
+  "resourceMethod": "POST",
+  "action": "CREATE_USER",
+  "changeType": "CREATED"
+}
+```
+
+#### Role Assigned Event
+```json
+{
+  "eventId": "evt-987654321",
+  "eventType": "ROLE_ASSIGNED",
+  "timestamp": "2026-03-25T10:30:00Z",
+  "source": "permission-service",
+  "accountId": "acc-user-123",
+  "roleId": 2,
+  "roleName": "MANAGER",
+  "assignedBy": "admin-user",
+  "reason": "Promotion"
+}
+```
+
+#### Role Revoked Event
+```json
+{
+  "eventId": "evt-555666777",
+  "eventType": "ROLE_REVOKED",
+  "timestamp": "2026-03-25T10:30:00Z",
+  "source": "permission-service",
+  "accountId": "acc-user-456",
+  "roleId": 3,
+  "roleName": "SUPERVISOR",
+  "revokedBy": "admin-user",
+  "reason": "Department change"
+}
+```
+
+### Kafka Monitoring
+
+Check Kafka topics and consumer lag:
+
+```bash
+# List all topics
+docker exec -it microservice-demo-kafka-1 kafka-topics.sh --list --bootstrap-server localhost:9092
+
+# Check consumer group status
+docker exec -it microservice-demo-kafka-1 kafka-consumer-groups.sh \
+  --bootstrap-server localhost:9092 \
+  --group permission-service \
+  --describe
+
+# View messages in a topic (last 10)
+docker exec -it microservice-demo-kafka-1 kafka-console-consumer.sh \
+  --bootstrap-server localhost:9092 \
+  --topic permission.changed \
+  --from-beginning \
+  --max-messages 10
+```
+
+### Event Flow Diagram
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                      Permission Service                         │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  Role Assignment/Revocation                                     │
+│         ↓                                                        │
+│  [RoleService.assignRole()]                                     │
+│         ↓                                                        │
+│  [KafkaProducer]                                                │
+│         ↓                                                        │
+│  Publishes:                                                      │
+│  - permission.role.assigned                                     │
+│  - permission.role.revoked                                      │
+│         ↓                                                        │
+│  ┌─────────────────────────────────────────────────────────┐  │
+│  │ Kafka Topics                                            │  │
+│  │ - permission.changed                                    │  │
+│  │ - permission.role.assigned                              │  │
+│  │ - permission.role.revoked                               │  │
+│  └─────────────────────────────────────────────────────────┘  │
+│         ↓                                                        │
+│  [KafkaConsumer - permission-service group]                     │
+│  Consumes from: account.created, account.deleted                │
+│         ↓                                                        │
+│  Other services receive permission events                        │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
 
 ## Configuration Properties
 
@@ -267,7 +989,10 @@ spring:
     name: permission-service
   
   datasource:
-    url: jdbc:mysql://${PERMISSION_DB_HOST}:${PERMISSION_DB_PORT}/${PERMISSION_MYSQL_DATABASE}
+    url: jdbc:mysql://${PERMISSION_DB_HOST}:${PERMISSION_DB_PORT}/${PERMISSION_MYSQL_DATABASE}?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=Asia/Ho_Chi_Minh
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: ${PERMISSION_MYSQL_USER}
+    password: ${PERMISSION_MYSQL_PASSWORD}
     
   jpa:
     hibernate:
@@ -278,8 +1003,24 @@ spring:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
     consumer:
       group-id: permission-service
+      auto-offset-reset: earliest
     producer:
       acks: all
+      retries: 3
+      
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
+      timeout: ${REDIS_TIMEOUT}
+      database: ${PERMISSION_REDIS_DATABASE}
+      
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    out-of-order: true
+    clean-disabled: true
 ```
 
 ## Common Tasks

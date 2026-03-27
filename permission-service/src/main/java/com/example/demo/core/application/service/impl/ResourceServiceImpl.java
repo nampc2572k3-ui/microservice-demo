@@ -7,7 +7,7 @@ import com.example.demo.core.application.dto.request.common.PageRequest;
 import com.example.demo.core.application.dto.response.ResourceResponse;
 import com.example.demo.core.domain.model.entity.Resource;
 import org.springframework.data.domain.Page;
-import com.example.demo.core.domain.repository.ResourceRepository;
+import com.example.demo.core.persistence.ResourceRepository;
 import com.example.demo.core.application.service.ResourceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;

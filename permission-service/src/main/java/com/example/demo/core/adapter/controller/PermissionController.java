@@ -1,9 +1,9 @@
 package com.example.demo.core.adapter.controller;
 
 import com.example.demo.common.utils.ResponseUtils;
+import com.example.demo.core.application.dto.response.MenuTreeResponse;
 import com.example.demo.core.application.dto.response.PermissionCheckResponse;
 import com.example.demo.core.application.dto.response.common.BaseResponse;
-import com.example.demo.core.application.dto.response.MenuTreeResponse;
 import com.example.demo.core.application.service.MenuService;
 import com.example.demo.core.application.service.PermissionService;
 import lombok.RequiredArgsConstructor;

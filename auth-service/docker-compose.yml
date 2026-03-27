@@ -1,0 +1,46 @@
+name: auth-service
+
+services:
+
+  # auth db
+  auth-mysql-master:
+    image: mysql:8.0
+    container_name: auth-master
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${AUTH_MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${AUTH_MYSQL_DATABASE}
+      MYSQL_USER: ${AUTH_MYSQL_USER}
+      MYSQL_PASSWORD: ${AUTH_MYSQL_PASSWORD}
+    command: >
+      --server-id=1
+      --log-bin=mysql-bin
+      --binlog-format=ROW
+      --gtid-mode=ON
+      --enforce-gtid-consistency=ON
+    volumes:
+      - ./docker/mysql/master/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "${AUTH_DB_PORT}:3306"
+
+  auth-mysql-replica:
+    image: mysql:8.0
+    container_name: auth-replica
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${AUTH_MYSQL_ROOT_PASSWORD}
+    command: >
+      --server-id=2
+      --relay-log=relay-log
+      --gtid-mode=ON
+      --enforce-gtid-consistency=ON
+    depends_on:
+      - auth-mysql-master
+    volumes:
+      - ./docker/mysql/slave/init.sh:/docker-entrypoint-initdb.d/init.sh
+    ports:
+      - "${AUTH_DB_REPLICA_PORT}:3306"
+
+volumes:
+  auth-mysql-data:
+  auth-mysql-replica-data:

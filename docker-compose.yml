@@ -1,139 +1,135 @@
 name: microservice
 
+x-redis-common: &redis-common
+  image: ${REDIS_IMAGE}
+  command: >
+    redis-server
+    --cluster-enabled ${REDIS_CLUSTER_ENABLED}
+    --cluster-config-file ${REDIS_CLUSTER_CONFIG_FILE}
+    --cluster-node-timeout ${REDIS_CLUSTER_TIMEOUT}
+    --appendonly ${REDIS_APPENDONLY}
+  restart: always
+
+
+x-kafka-env: &kafka-env
+  KAFKA_PROCESS_ROLES: broker,controller
+  KAFKA_CLUSTER_ID: ${KAFKA_CLUSTER_ID}
+  KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-1:19092,2@kafka-2:19093,3@kafka-3:19094
+  KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+  KAFKA_LOG_DIRS: /var/lib/kafka/data
+  KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+
+x-kafka-common: &kafka-common
+  image: ${KAFKA_IMAGE}
+  restart: always
+
 services:
-
-  # permission db
-  permission-mysql:
-    image: mysql:8.0
-    container_name: permission
-    restart: always
-    environment:
-      MYSQL_ROOT_PASSWORD: ${PERMISSION_MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${PERMISSION_MYSQL_DATABASE}
-      MYSQL_USER: ${PERMISSION_MYSQL_USER}
-      MYSQL_PASSWORD: ${PERMISSION_MYSQL_PASSWORD}
-    command: >
-      --server-id=3
-      --log-bin=mysql-bin
-      --binlog-format=ROW
-    volumes:
-      - permission-mysql-data:/var/lib/mysql
+  redis-node-1:
+    <<: *redis-common
+    container_name: redis-node-1
     ports:
-      - "${PERMISSION_DB_PORT}:3306"
+      - "${REDIS_NODE_1_PORT}:6379"
 
-  permission-mysql-replica:
-    image: mysql:8.0
-    container_name: permission-replica
-    restart: always
-    environment:
-      MYSQL_ROOT_PASSWORD: ${PERMISSION_MYSQL_ROOT_PASSWORD}
-    command: >
-      --server-id=4
-      --relay-log=relay-log
+  redis-node-2:
+    <<: *redis-common
+    container_name: redis-node-2
+    ports:
+      - "${REDIS_NODE_2_PORT}:6379"
+
+  redis-node-3:
+    <<: *redis-common
+    container_name: redis-node-3
+    ports:
+      - "${REDIS_NODE_3_PORT}:6379"
+
+  redis-node-4:
+    <<: *redis-common
+    container_name: redis-node-4
+    ports:
+      - "${REDIS_NODE_4_PORT}:6379"
+
+  redis-node-5:
+    <<: *redis-common
+    container_name: redis-node-5
+    ports:
+      - "${REDIS_NODE_5_PORT}:6379"
+
+  redis-node-6:
+    <<: *redis-common
+    container_name: redis-node-6
+    ports:
+      - "${REDIS_NODE_6_PORT}:6379"
+
+  redis-cluster-init:
+    image: ${REDIS_IMAGE}
+    container_name: redis-cluster-init
     depends_on:
-      - permission-mysql
-    volumes:
-      - permission-mysql-replica-data:/var/lib/mysql
-    ports:
-      - "3311:3306"
+      - redis-node-1
+      - redis-node-2
+      - redis-node-3
+      - redis-node-4
+      - redis-node-5
+      - redis-node-6
+    entrypoint: >
+      sh -c "
+      echo '⏳ Waiting for Redis nodes...';
+      sleep ${REDIS_INIT_SLEEP};
 
-  # redis
-  redis:
-    image: redis:7.0
-    container_name: microservice-redis
-    restart: always
-    ports:
-      - "${REDIS_PORT}:6379"
-    env_file:
-      - .env
+      echo '🚀 Creating Redis Cluster...';
 
-    # auth db
-  auth-mysql:
-    image: mysql:8.0
-    container_name: auth
-    restart: always
-    environment:
-      MYSQL_ROOT_PASSWORD: ${AUTH_MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${AUTH_MYSQL_DATABASE}
-      MYSQL_USER: ${AUTH_MYSQL_USER}
-      MYSQL_PASSWORD: ${AUTH_MYSQL_PASSWORD}
-    command: >
-      --server-id=1
-      --log-bin=mysql-bin
-      --binlog-format=ROW
-    volumes:
-      - auth-mysql-data:/var/lib/mysql
-    ports:
-      - "${AUTH_DB_PORT}:3306"
+      redis-cli --cluster create \
+      redis-node-1:6379 \
+      redis-node-2:6379 \
+      redis-node-3:6379 \
+      redis-node-4:6379 \
+      redis-node-5:6379 \
+      redis-node-6:6379 \
+      --cluster-replicas ${REDIS_CLUSTER_REPLICAS} \
+      --cluster-yes;
 
-  auth-mysql-replica:
-    image: mysql:8.0
-    container_name: auth-replica
-    restart: always
-    environment:
-      MYSQL_ROOT_PASSWORD: ${AUTH_MYSQL_ROOT_PASSWORD}
-    command: >
-      --server-id=2
-      --relay-log=relay-log
-    depends_on:
-      - auth-mysql
-    volumes:
-      - auth-mysql-replica-data:/var/lib/mysql
-    ports:
-      - "3310:3306"
+      echo '✅ Redis Cluster ready!';
+      "
+
 
   # kafka
   kafka-1:
-    image: ${KAFKA_IMAGE}
+    <<: *kafka-common
     container_name: kafka-1
     ports:
       - "${KAFKA_PORT_1}:9092"
     volumes:
       - kafka1-data:/var/lib/kafka/data
     environment:
-      KAFKA_PROCESS_ROLES: broker,controller
+      <<: *kafka-env
       KAFKA_NODE_ID: 1
-      KAFKA_CLUSTER_ID: ${KAFKA_CLUSTER_ID}
-      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-1:19092,2@kafka-2:19093,3@kafka-3:19094
       KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:19092
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-1:9092
-      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
-      KAFKA_LOG_DIRS: /var/lib/kafka/data
-      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
 
   kafka-2:
-    image: ${KAFKA_IMAGE}
+    <<: *kafka-common
     container_name: kafka-2
     ports:
       - "${KAFKA_PORT_2}:9092"
     volumes:
       - kafka2-data:/var/lib/kafka/data
     environment:
-      KAFKA_PROCESS_ROLES: broker,controller
+      <<: *kafka-env
       KAFKA_NODE_ID: 2
-      KAFKA_CLUSTER_ID: ${KAFKA_CLUSTER_ID}
-      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-1:19092,2@kafka-2:19093,3@kafka-3:19094
       KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:19093
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-2:9092
-      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
-      KAFKA_LOG_DIRS: /var/lib/kafka/data
 
   kafka-3:
-    image: ${KAFKA_IMAGE}
+    <<: *kafka-common
     container_name: kafka-3
     ports:
       - "${KAFKA_PORT_3}:9092"
     volumes:
       - kafka3-data:/var/lib/kafka/data
     environment:
-      KAFKA_PROCESS_ROLES: broker,controller
+      <<: *kafka-env
       KAFKA_NODE_ID: 3
-      KAFKA_CLUSTER_ID: ${KAFKA_CLUSTER_ID}
-      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-1:19092,2@kafka-2:19093,3@kafka-3:19094
       KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:19094
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-3:9092
-      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
-      KAFKA_LOG_DIRS: /var/lib/kafka/data
 
   schema-registry:
     image: ${SCHEMA_REGISTRY_IMAGE}
@@ -166,11 +162,6 @@ services:
 
 
 volumes:
-  auth-mysql-data:
-  auth-mysql-replica-data:
-  permission-mysql-data:
-  permission-mysql-replica-data:
-
   kafka1-data:
   kafka2-data:
   kafka3-data:

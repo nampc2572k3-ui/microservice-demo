@@ -18,7 +18,6 @@ import java.util.UUID;
 @Slf4j
 public class PermissionEventPublisher {
 
-
     private final KafkaTemplate<String, Object> kafkaTemplate;
 
     @Value("${app.kafka.topics.permission-changed}")

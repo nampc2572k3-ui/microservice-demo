@@ -8,11 +8,31 @@ spring:
     name: permission-service
 
   # db
-  datasource:
-    url: jdbc:mysql://${PERMISSION_DB_HOST}:${PERMISSION_DB_PORT}/${PERMISSION_MYSQL_DATABASE}?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=Asia/Ho_Chi_Minh
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    username: ${PERMISSION_MYSQL_USER}
-    password: ${PERMISSION_MYSQL_PASSWORD}
+  spring:
+    application:
+      name: permission-service
+
+    datasource:
+      master:
+        url: "jdbc:mysql://${PERMISSION_DB_HOST}:${PERMISSION_DB_PORT}/${PERMISSION_MYSQL_DATABASE}?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=Asia/Ho_Chi_Minh"
+        driverClassName: "com.mysql.cj.jdbc.Driver"
+        username: ${PERMISSION_MYSQL_USER}
+        password: ${PERMISSION_MYSQL_PASSWORD}
+        hikari:
+          pool-name: master-pool
+          maximum-pool-size: 20
+          minimum-idle: 5
+          connection-timeout: 30000
+
+      slave:
+        url: "jdbc:mysql://${PERMISSION_DB_HOST}:${PERMISSION_DB_REPLICA_PORT}/${PERMISSION_MYSQL_DATABASE}?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=Asia/Ho_Chi_Minh"
+        driverClassName: "com.mysql.cj.jdbc.Driver"
+        username: ${PERMISSION_MYSQL_USER}
+        password: ${PERMISSION_MYSQL_ROOT_PASSWORD}
+        hikari:
+          pool-name: slave-pool
+          maximum-pool-size: 20
+          minimum-idle: 5
 
   # flyway
   flyway:
@@ -53,18 +73,29 @@ spring:
         spring.json.add.type.headers: false
         enable.idempotence: true
 
-  # redis
-  data:
-    redis:
-      host: ${REDIS_HOST}
-      port: ${REDIS_PORT}
-      timeout: ${REDIS_TIMEOUT}
-      database: ${PERMISSION_REDIS_DATABASE}
-      lettuce:
-        pool:
-          max-active: 20
-          max-idle: 10
-          min-idle: 2
+# redis
+microservice-redis:
+  timeout: ${REDIS_TIMEOUT}
+  database: ${REDIS_DATABASE}
+  cluster:
+    nodes:
+      - redis-node-1:6379
+      - redis-node-2:6379
+      - redis-node-3:6379
+      - redis-node-4:6379
+      - redis-node-5:6379
+      - redis-node-6:6379
+    max-redirects: 3
+  lettuce:
+    pool:
+      max-active: 20
+      max-idle: 10
+      min-idle: 2
+      max-wait: 2000ms
+    cluster:
+      refresh:
+        adaptive: true
+        period: 30s
 
 app:
   kafka:
@@ -72,6 +103,12 @@ app:
       permission-changed: permission.changed
       role-assigned: permission.role.assigned
       role-revoked: permission.role.revoked
+
+# eureka
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
 
 # logging
 logging:
