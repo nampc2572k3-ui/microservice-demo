@@ -149,4 +149,8 @@ public class JwtProvider {
         );
     }
 
+    public String parseJti(String token) {
+        return extractClaim(token, Claims::getId);
+    }
+
 }

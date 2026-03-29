@@ -14,8 +14,6 @@ public class LoginResponse {
 
     private String username;
 
-    private String password;
-
     private String email;
 
     private List<RolePermissionResponse> roles;

@@ -4,11 +4,17 @@ import com.example.demo.common.constant.ErrorCode;
 import com.example.demo.common.exception.CustomBusinessException;
 import com.example.demo.core.adapter.http.PermissionClient;
 import com.example.demo.core.application.dto.request.LoginRequest;
+import com.example.demo.core.application.dto.request.RefreshTokenRequest;
 import com.example.demo.core.application.dto.request.RegisterRequest;
 import com.example.demo.core.application.dto.response.LoginResponse;
+import com.example.demo.core.application.dto.response.RefreshTokenResponse;
 import com.example.demo.core.application.service.AuthService;
+import com.example.demo.core.domain.helper.AuthHelper;
 import com.example.demo.core.domain.model.entity.Account;
+import com.example.demo.core.domain.model.entity.AccountDevice;
+import com.example.demo.core.persistence.AccountDeviceRepository;
 import com.example.demo.core.persistence.AccountRepository;
+import com.example.demo.core.persistence.RefreshTokenRepository;
 import com.example.demo.infrastructure.identity.UserDetailsImpl;
 import com.example.demo.infrastructure.jwt.JwtProvider;
 import lombok.RequiredArgsConstructor;
@@ -38,6 +44,8 @@ public class AuthServiceImpl implements AuthService {
     private final JwtProvider jwtProvider;
 
     private final PermissionClient permissionClient;
+
+    private final AuthHelper authHelper;
 
     @Transactional(rollbackFor = Exception.class)
     @Override
@@ -75,9 +83,9 @@ public class AuthServiceImpl implements AuthService {
 
     }
 
-    @Transactional(readOnly = true)
+    @Transactional(rollbackFor = Exception.class)
     @Override
-    public LoginResponse login(LoginRequest request) {
+    public LoginResponse login(LoginRequest request, String clientIp) {
 
         // rate limit by Ip (TODO)
 
@@ -87,14 +95,20 @@ public class AuthServiceImpl implements AuthService {
         SecurityContextHolder.getContext().setAuthentication(authentication);
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
 
+        // get account info
+        UserDetailsImpl customUser = (UserDetailsImpl) userDetails;
+        Account acc = customUser.account();
+
+        // save device info
+        AccountDevice device = authHelper.handleAccountDevice(request, acc);
+
+        // generate tokens
         String accessToken = jwtProvider.generateAccessToken(userDetails);
         String refreshToken = jwtProvider.generateRefreshToken(userDetails);
 
-        UserDetailsImpl customUser = (UserDetailsImpl) userDetails;
-
-        Account acc = customUser.account();
 
 
+        // // Success: reset counters
 
         // cache refresh token in redis (TODO)
 
@@ -110,6 +124,12 @@ public class AuthServiceImpl implements AuthService {
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
                 .build();
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    @Override
+    public RefreshTokenResponse refreshToken(RefreshTokenRequest request) {
+        return null;
     }
 
 
