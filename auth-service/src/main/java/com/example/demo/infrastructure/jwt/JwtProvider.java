@@ -18,6 +18,7 @@ import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -151,6 +152,11 @@ public class JwtProvider {
 
     public String parseJti(String token) {
         return extractClaim(token, Claims::getId);
+    }
+
+    public LocalDateTime extractExpiration(String token) {
+        Date expiration = extractClaim(token, Claims::getExpiration);
+        return LocalDateTime.ofInstant(expiration.toInstant(), TimeZone.getDefault().toZoneId());
     }
 
 }

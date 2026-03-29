@@ -6,7 +6,7 @@ CREATE TABLE refresh_tokens
 
     jti        VARCHAR(255) NOT NULL UNIQUE,
 
-    device_id  VARCHAR(255),
+    device_id  BIGINT,
 
     user_agent VARCHAR(255),
 

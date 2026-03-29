@@ -10,6 +10,7 @@ import com.example.demo.core.application.dto.response.LoginResponse;
 import com.example.demo.core.application.dto.response.RefreshTokenResponse;
 import com.example.demo.core.application.service.AuthService;
 import com.example.demo.core.domain.helper.AuthHelper;
+import com.example.demo.core.domain.helper.RefreshTokenHelper;
 import com.example.demo.core.domain.model.entity.Account;
 import com.example.demo.core.domain.model.entity.AccountDevice;
 import com.example.demo.core.persistence.AccountDeviceRepository;
@@ -17,6 +18,7 @@ import com.example.demo.core.persistence.AccountRepository;
 import com.example.demo.core.persistence.RefreshTokenRepository;
 import com.example.demo.infrastructure.identity.UserDetailsImpl;
 import com.example.demo.infrastructure.jwt.JwtProvider;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -46,6 +48,7 @@ public class AuthServiceImpl implements AuthService {
     private final PermissionClient permissionClient;
 
     private final AuthHelper authHelper;
+    private final RefreshTokenHelper refreshTokenHelper;
 
     @Transactional(rollbackFor = Exception.class)
     @Override
@@ -85,7 +88,9 @@ public class AuthServiceImpl implements AuthService {
 
     @Transactional(rollbackFor = Exception.class)
     @Override
-    public LoginResponse login(LoginRequest request, String clientIp) {
+    public LoginResponse login(LoginRequest request, HttpServletRequest httpRequest) {
+
+        String clientIp = authHelper.getClientIp(httpRequest);
 
         // rate limit by Ip (TODO)
 
@@ -106,13 +111,12 @@ public class AuthServiceImpl implements AuthService {
         String accessToken = jwtProvider.generateAccessToken(userDetails);
         String refreshToken = jwtProvider.generateRefreshToken(userDetails);
 
-
+        // save refresh token in database and redis (for rotation and blacklisting)
+        refreshTokenHelper.createRefreshToken(acc, refreshToken, device, clientIp, httpRequest);
 
         // // Success: reset counters
 
-        // cache refresh token in redis (TODO)
-
-        // build roles response (TODO)
+        // build roles response
         List<LoginResponse.RolePermissionResponse> roles = permissionClient.getPermissionsSafe(acc.getId());
 
 

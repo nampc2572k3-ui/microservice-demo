@@ -32,7 +32,7 @@ public class RefreshToken extends Audit{
     @Column(nullable = false, unique = true)
     private String jti;
 
-    private String deviceId;
+    private Long deviceId;
 
     private String userAgent;
 

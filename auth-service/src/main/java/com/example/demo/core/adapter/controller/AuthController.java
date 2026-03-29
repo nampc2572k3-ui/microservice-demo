@@ -39,7 +39,7 @@ public class AuthController {
             HttpServletRequest httpRequest
     ) {
         var response = authService.login(
-                request, authHelper.getClientIp(httpRequest)
+                request, httpRequest
         );
         return ResponseEntity.ok(ResponseUtils.success(response, "Login Success"));
     }
