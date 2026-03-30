@@ -39,7 +39,7 @@ services:
     volumes:
       - ./docker/mysql/slave/init.sh:/docker-entrypoint-initdb.d/init.sh
     ports:
-      - "${PERMISSION_DB_REPLICA_PORT_PORT}:3306"
+      - "${PERMISSION_DB_REPLICA_PORT}:3306"
 
 volumes:
   permission-mysql-data:

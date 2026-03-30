@@ -11,6 +11,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -35,6 +36,7 @@ public class AuthHelper {
         return request.getRemoteAddr();
     }
 
+    @Transactional(rollbackFor = Exception.class)
     public AccountDevice handleAccountDevice(LoginRequest request, Account acc) {
 
         Optional<AccountDevice> optionalDevice =
@@ -70,6 +72,7 @@ public class AuthHelper {
         return device;
     }
 
+    @Transactional(rollbackFor = Exception.class)
     public void recordLoginAttempt(String email, String clientIp, boolean successful, String reason) {
         LoginAttempt attempt = LoginAttempt.builder()
                 .email(email)
