@@ -1,6 +1,5 @@
 package com.example.demo.common.constant;
 
-
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -24,10 +23,11 @@ public enum ErrorCode {
     // permission
     UNAUTHORIZED_INTERNAL_CALL(401, "Unauthorized Internal Call"),
 
-
     // cache
     CACHE_DESERIALIZATION_ERROR(500, "Cannot convert cache value to object"),
 
+    // general
+    BAD_REQUEST(400, "Bad Request"),
     INTERNAL_SEVER_ERROR(500, "Internal Server Error");
 
     private final int code;

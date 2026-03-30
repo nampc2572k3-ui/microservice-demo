@@ -1,4 +1,4 @@
-package com.example.demo.common.constant.cache;
+package com.example.demo.common.cache.key;
 
 public class CacheKeyFactory {
 
@@ -22,5 +22,9 @@ public class CacheKeyFactory {
 
     public static String accountRoles(String accId, String version) {
         return String.format(PREFIX + "roles:%s:%s", accId, version);
+    }
+
+    public static String rolePermissions(String accId, String version) {
+        return String.format(PREFIX + "roleperms:%s:%s", accId, version);
     }
 }

@@ -1,8 +1,9 @@
 package com.example.demo.core.application.service.impl;
 
+import com.example.demo.common.cache.core.CacheService;
 import com.example.demo.common.constant.ErrorCode;
 import com.example.demo.common.exception.CustomBusinessException;
-import com.example.demo.core.domain.helper.MenuHelper;
+import com.example.demo.core.application.cache.MenuCache;
 import com.example.demo.core.application.dto.projection.MenuOnlyProjection;
 import com.example.demo.core.application.dto.projection.MenuResourceFlatProjection;
 import com.example.demo.core.application.dto.request.AssignMenuRequest;
@@ -11,14 +12,13 @@ import com.example.demo.core.application.dto.request.common.PageRequest;
 import com.example.demo.core.application.dto.response.MenuResponse;
 import com.example.demo.core.application.dto.response.MenuTreeResponse;
 import com.example.demo.core.application.dto.response.ResourceResponse;
+import com.example.demo.core.application.service.MenuService;
+import com.example.demo.core.domain.helper.MenuHelper;
 import com.example.demo.core.domain.model.entity.Menu;
 import com.example.demo.core.domain.model.entity.Resource;
 import com.example.demo.core.persistence.MenuRepository;
 import com.example.demo.core.persistence.ResourceRepository;
 import com.example.demo.core.persistence.RoleMenuRepository;
-import com.example.demo.core.application.service.CacheService;
-import com.example.demo.core.application.service.MenuService;
-import com.example.demo.core.application.service.cache.MenuCacheService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -38,22 +38,25 @@ public class MenuServiceImpl implements MenuService {
     private final MenuRepository menuRepository;
     private final ResourceRepository resourceRepository;
     private final RoleMenuRepository roleMenuRepository;
-    private final MenuCacheService menuCacheService;
+
     private final CacheService cacheService;
+    private final MenuCache menuCache;
+
+    private final MenuHelper menuHelper;
 
     @Transactional(readOnly = true)
     @Override
     public List<MenuTreeResponse> getMenuTreeByAccount(String accId) {
 
-        Optional<List<MenuTreeResponse>> cached = menuCacheService.get(accId);
+        Optional<List<MenuTreeResponse>> cached = menuCache.get(accId);
         if (cached.isPresent()) return cached.get();
 
-        List<MenuTreeResponse> tree = MenuHelper.buildMenuTree(
+        List<MenuTreeResponse> tree = menuHelper.buildMenuTree(
                 menuRepository.findMenuByAccount(accId)
         );
 
         String version = cacheService.getOrInitVersion(accId);
-        menuCacheService.put(accId, version, tree);
+        menuCache.put(accId, version, tree);
 
         return tree;
     }

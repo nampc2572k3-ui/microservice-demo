@@ -13,7 +13,7 @@ import java.util.List;
 public interface RoleRepository extends JpaRepository<Role, Long> {
 
     @Query("""
-            SELECT new com.example.demo.domain.model.dto.response.RoleResponse(
+            SELECT new com.example.demo.core.application.dto.response.RoleResponse(
                  r.id,
                  r.name,
                  r.description,
@@ -27,7 +27,7 @@ public interface RoleRepository extends JpaRepository<Role, Long> {
 
 
     @Query("""
-                SELECT new com.example.demo.domain.model.dto.response.RoleResponse(
+                SELECT new com.example.demo.core.application.dto.response.RoleResponse(
                     r.id,
                     r.name,
                     r.description,

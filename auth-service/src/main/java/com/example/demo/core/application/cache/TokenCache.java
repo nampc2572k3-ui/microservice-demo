@@ -1,6 +1,6 @@
-package com.example.demo.core.application.service.cache;
+package com.example.demo.core.application.cache;
 
-import com.example.demo.common.constant.CacheKeyFactory;
+import com.example.demo.common.cache.CacheKeyFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
@@ -9,7 +9,7 @@ import java.time.Duration;
 
 @Service
 @RequiredArgsConstructor
-public class TokenCacheService {
+public class TokenCache {
 
     private final StringRedisTemplate redisTemplate;
 

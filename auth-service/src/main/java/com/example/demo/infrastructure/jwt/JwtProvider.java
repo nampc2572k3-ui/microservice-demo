@@ -143,6 +143,7 @@ public class JwtProvider {
     }
 
 
+    @SuppressWarnings("unchecked")
     public Set<String> extractAuthorities(String token) {
         return new HashSet<>(
                 extractClaim(token,

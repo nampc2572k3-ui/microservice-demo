@@ -1,4 +1,4 @@
-package com.example.demo.common.constant.cache;
+package com.example.demo.common.cache.core;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

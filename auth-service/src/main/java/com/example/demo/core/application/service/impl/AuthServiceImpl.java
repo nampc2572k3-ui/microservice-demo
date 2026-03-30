@@ -9,13 +9,12 @@ import com.example.demo.core.application.dto.request.RegisterRequest;
 import com.example.demo.core.application.dto.response.LoginResponse;
 import com.example.demo.core.application.dto.response.RefreshTokenResponse;
 import com.example.demo.core.application.service.AuthService;
+import com.example.demo.core.application.cache.LoginRateLimitCache;
 import com.example.demo.core.domain.helper.AuthHelper;
 import com.example.demo.core.domain.helper.RefreshTokenHelper;
 import com.example.demo.core.domain.model.entity.Account;
 import com.example.demo.core.domain.model.entity.AccountDevice;
-import com.example.demo.core.persistence.AccountDeviceRepository;
 import com.example.demo.core.persistence.AccountRepository;
-import com.example.demo.core.persistence.RefreshTokenRepository;
 import com.example.demo.infrastructure.identity.UserDetailsImpl;
 import com.example.demo.infrastructure.jwt.JwtProvider;
 import jakarta.servlet.http.HttpServletRequest;
@@ -30,6 +29,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -49,6 +49,8 @@ public class AuthServiceImpl implements AuthService {
 
     private final AuthHelper authHelper;
     private final RefreshTokenHelper refreshTokenHelper;
+
+    private final LoginRateLimitCache rateLimitCache;
 
     @Transactional(rollbackFor = Exception.class)
     @Override
@@ -79,7 +81,7 @@ public class AuthServiceImpl implements AuthService {
                 .enabled(false)
                 .locked(false)
                 .build();
-        
+
         accountRepository.save(account);
 
         // send verification email (TODO) publish event to send email
@@ -89,36 +91,41 @@ public class AuthServiceImpl implements AuthService {
     @Transactional(rollbackFor = Exception.class)
     @Override
     public LoginResponse login(LoginRequest request, HttpServletRequest httpRequest) {
-
         String clientIp = authHelper.getClientIp(httpRequest);
 
-        // rate limit by Ip (TODO)
+        // rate limit by Ip
+        rateLimitCache.check(clientIp, request.getIdentity());
 
         // Authenticate & Context setup
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getIdentity(), request.getPassword()));
         SecurityContextHolder.getContext().setAuthentication(authentication);
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-
-        // get account info
         UserDetailsImpl customUser = (UserDetailsImpl) userDetails;
         Account acc = customUser.account();
 
         // save device info
         AccountDevice device = authHelper.handleAccountDevice(request, acc);
 
-        // generate tokens
         String accessToken = jwtProvider.generateAccessToken(userDetails);
         String refreshToken = jwtProvider.generateRefreshToken(userDetails);
 
         // save refresh token in database and redis (for rotation and blacklisting)
         refreshTokenHelper.createRefreshToken(acc, refreshToken, device, clientIp, httpRequest);
 
-        // // Success: reset counters
+        rateLimitCache.loginSuccess(clientIp, request.getIdentity());
 
         // build roles response
         List<LoginResponse.RolePermissionResponse> roles = permissionClient.getPermissionsSafe(acc.getId());
 
+        // publish login event (TODO) for audit log, security monitoring, etc.
+        // update last login time and record login attempt
+
+
+//        acc.setLastLoginAt(LocalDateTime.now());
+//        accountRepository.save(acc);
+//
+//        authHelper.recordLoginAttempt(acc.getEmail(), clientIp, true, null);
 
         return LoginResponse.builder()
                 .accountId(acc.getId())
@@ -128,6 +135,7 @@ public class AuthServiceImpl implements AuthService {
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
                 .build();
+
     }
 
     @Transactional(rollbackFor = Exception.class)

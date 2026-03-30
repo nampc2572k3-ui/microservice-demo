@@ -28,6 +28,7 @@ spring:
         pool-name: slave-pool
         maximum-pool-size: 20
         minimum-idle: 5
+
 # flyway
   flyway:
     enabled: true
@@ -42,6 +43,28 @@ spring:
     hibernate:
       ddl-auto: none
     show-sql: true
+
+  # kafka
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
+
+    consumer:
+      group-id: auth-service
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "com.example.demo.domain.event"
+
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      acks: all
+      retries: 3
+      properties:
+        spring.json.add.type.headers: false
+        enable.idempotence: true
 
 # jwt
 jwt:
@@ -74,11 +97,17 @@ microservice-redis:
         adaptive: true
         period: 30s
 
- # eureka
+# eureka
 eureka:
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka/
+
+app:
+  kafka:
+    topics:
+      login-success: auth.login.success
+      login-permission-warmup: auth.login.permission-warmup
 
 # logging
 logging:

@@ -1,7 +1,8 @@
 package com.example.demo.core.adapter.message.consumer;
 
+import com.example.demo.core.application.facade.CacheWarmupFacade;
 import com.example.demo.core.domain.event.external.PermissionChangedEvent;
-import com.example.demo.core.application.service.cache.common.CacheWarmupService;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -14,7 +15,7 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class PermissionChangedConsumer {
 
-    private final CacheWarmupService cacheWarmupService;
+    private final CacheWarmupFacade cacheWarmupFacade;
 
     @KafkaListener(
             topics = "${app.kafka.topics.permission-changed}",
@@ -29,7 +30,7 @@ public class PermissionChangedConsumer {
         log.info("Received permission.changed for account {} [partition={}, offset={}]",
                 event.getAccountId(), partition, offset);
 
-        cacheWarmupService.refreshAsync(event.getAccountId());
+        cacheWarmupFacade.refresh(event.getAccountId());
     }
 
 }

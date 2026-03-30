@@ -33,5 +33,5 @@ public class LoginAttempt extends Audit {
 
     private String failureReason;
 
-    private LocalDateTime AttemptedAt;
+    private LocalDateTime attemptedAt;
 }

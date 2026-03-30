@@ -1,6 +1,5 @@
 package com.example.demo.common.exception;
 
-import com.example.demo.common.constant.ErrorCode;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -17,10 +16,6 @@ public class CustomBusinessException extends RuntimeException {
     public CustomBusinessException(int errorCode, String message) {
         this.errorCode = errorCode;
         this.message = message;
-    }
-
-    public CustomBusinessException(ErrorCode error) {
-        this(error.getCode(), error.getMessage());
     }
 
     @Override

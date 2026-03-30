@@ -1,4 +1,4 @@
-package com.example.demo.infrastructure.config.db;
+package com.example.demo.infrastructure.config.audit;
 
 import com.example.demo.infrastructure.context.UserContext;
 import org.springframework.context.annotation.Bean;

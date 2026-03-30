@@ -1,13 +1,13 @@
 package com.example.demo.common.exception.handler;
 
-import com.example.demo.core.application.dto.response.common.BaseResponse;
+import com.example.demo.common.constant.ErrorCode;
 import com.example.demo.common.exception.CustomBusinessException;
 import com.example.demo.common.utils.ResponseUtils;
+import com.example.demo.core.application.dto.response.common.BaseResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.MessageSourceResolvable;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -29,8 +29,8 @@ public class CustomControllerExceptionAdvice {
                     .collect(Collectors.joining(", "));
 
             var response = ResponseUtils.error(
-                    HttpStatus.BAD_REQUEST.value(), message);
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+                    ErrorCode.BAD_REQUEST.getCode(), message);
+            return ResponseEntity.status(ErrorCode.BAD_REQUEST.getCode()).body(response);
         }
         if (e instanceof HandlerMethodValidationException validationException) {
             var message = validationException.getValueResults().stream()
@@ -39,14 +39,14 @@ public class CustomControllerExceptionAdvice {
                     .collect(Collectors.joining(", "));
 
             var response = ResponseUtils.error(
-                    HttpStatus.BAD_REQUEST.value(), message);
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+                    ErrorCode.BAD_REQUEST.getCode(), message);
+            return ResponseEntity.status(ErrorCode.BAD_REQUEST.getCode()).body(response);
         }
         var response = ResponseUtils.error(
-                HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                "Internal server error"
+                ErrorCode.INTERNAL_SEVER_ERROR.getCode(),
+                ErrorCode.INTERNAL_SEVER_ERROR.getMessage()
         );
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        return ResponseEntity.status(ErrorCode.INTERNAL_SEVER_ERROR.getCode()).body(response);
     }
 
     @ExceptionHandler(CustomBusinessException.class)

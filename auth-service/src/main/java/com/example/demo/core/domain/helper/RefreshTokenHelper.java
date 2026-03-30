@@ -1,6 +1,6 @@
 package com.example.demo.core.domain.helper;
 
-import com.example.demo.core.application.service.cache.TokenCacheService;
+import com.example.demo.core.application.cache.TokenCache;
 import com.example.demo.core.domain.model.entity.Account;
 import com.example.demo.core.domain.model.entity.AccountDevice;
 import com.example.demo.core.domain.model.entity.RefreshToken;
@@ -11,8 +11,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDateTime;
-
 @Slf4j
 @RequiredArgsConstructor
 @Component
@@ -22,7 +20,7 @@ public class RefreshTokenHelper {
 
     private final RefreshTokenRepository refreshTokenRepository;
 
-    private final TokenCacheService tokenCacheService;
+    private final TokenCache tokenCacheService;
 
     public void createRefreshToken(
             Account account, String refreshToken,

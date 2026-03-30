@@ -2,7 +2,6 @@ package com.example.demo.core.application.dto.response;
 
 import com.example.demo.common.constant.ErrorCode;
 import com.example.demo.common.exception.CustomBusinessException;
-import com.example.demo.core.domain.helper.PermissionHelper;
 import com.example.demo.core.application.dto.projection.ResourcePermissionProjection;
 import lombok.Builder;
 import lombok.Getter;
@@ -33,16 +32,6 @@ public class PermissionCheckResponse {
                 ErrorCode.CACHE_DESERIALIZATION_ERROR.getCode(),
                 ErrorCode.CACHE_DESERIALIZATION_ERROR.getMessage()
         );
-    }
-
-    public static PermissionCheckResponse from(ResourcePermissionProjection dao) {
-        if (dao.getBitmask() == null || dao.getBitmask() == 0) {
-            return PermissionCheckResponse.deny("NO_PERMISSION");
-        } else if (PermissionHelper.hasPermission(dao.getBitmask(), dao.getHttpMethod())) {
-           return PermissionCheckResponse.allow("OK");
-        } else {
-            return PermissionCheckResponse.deny("NO_PERMISSION");
-        }
     }
 
     public static PermissionCheckResponse allow(String reason) {

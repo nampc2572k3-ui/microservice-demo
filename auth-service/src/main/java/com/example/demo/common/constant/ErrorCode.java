@@ -22,8 +22,11 @@ public enum ErrorCode {
     EMAIL_ALREADY_EXISTS(3002, "Email Already Exists"),
     FAILED_TO_ASSIGN_ROLE(3003, "Failed to Assign Role"),
 
+    // login
+    SPAM_LOGIN_ATTEMPTS(4001, "Too Many Failed Login Attempts. Please Try Again Later."),
 
-    INTERNAL_SEVER_ERROR(500, "Internal Server Error");
+
+    INTERNAL_SERVER_ERROR(500, "Internal Server Error");
 
     private final int code;
     private final String message;

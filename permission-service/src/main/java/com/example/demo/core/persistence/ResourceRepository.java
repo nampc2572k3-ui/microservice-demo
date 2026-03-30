@@ -17,7 +17,7 @@ import java.util.List;
 public interface ResourceRepository extends JpaRepository<Resource, Long> {
 
     @Query("""
-        SELECT new com.example.demo.domain.model.dto.response.ResourceResponse(
+        SELECT new com.example.demo.core.application.dto.response.ResourceResponse(
             r.id,
             r.pathPattern,
             r.httpMethod,

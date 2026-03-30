@@ -1,17 +1,17 @@
 package com.example.demo.core.application.service.impl;
 
+import com.example.demo.common.cache.core.CacheService;
 import com.example.demo.common.constant.ErrorCode;
 import com.example.demo.common.exception.CustomBusinessException;
-import com.example.demo.core.domain.event.internal.RoleAssignedTransactionalEvent;
+import com.example.demo.core.application.cache.RoleCache;
 import com.example.demo.core.application.dto.request.AssignRoleRequest;
 import com.example.demo.core.application.dto.response.RoleResponse;
+import com.example.demo.core.application.service.RoleService;
+import com.example.demo.core.domain.event.internal.RoleAssignedTransactionalEvent;
 import com.example.demo.core.domain.model.entity.AccountRole;
 import com.example.demo.core.domain.model.entity.Role;
 import com.example.demo.core.persistence.AccountRoleRepository;
 import com.example.demo.core.persistence.RoleRepository;
-import com.example.demo.core.application.service.CacheService;
-import com.example.demo.core.application.service.RoleService;
-import com.example.demo.core.application.service.cache.RoleCacheService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -28,21 +28,24 @@ public class RoleServiceImpl implements RoleService {
 
     private final RoleRepository roleRepository;
     private final AccountRoleRepository accountRoleRepository;
+
     private final ApplicationEventPublisher eventPublisher;
-    private final RoleCacheService roleCacheService;
+
+    private final RoleCache roleCache;
+
     private final CacheService cacheService;
 
     @Transactional(readOnly = true)
     @Override
     public List<RoleResponse> getRolesByAccount(String accId) {
 
-        Optional<List<RoleResponse>> cached = roleCacheService.get(accId);
+        Optional<List<RoleResponse>> cached = roleCache.get(accId);
         if (cached.isPresent()) return cached.get();
 
         List<RoleResponse> roles = roleRepository.findRolesByAccountId(accId);
         String version = cacheService.getOrInitVersion(accId);
 
-        roleCacheService.put(accId, version, roles);
+        roleCache.put(accId, version, roles);
 
         return roles;
 

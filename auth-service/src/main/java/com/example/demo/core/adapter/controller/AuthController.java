@@ -38,9 +38,7 @@ public class AuthController {
             @RequestBody @Valid LoginRequest request,
             HttpServletRequest httpRequest
     ) {
-        var response = authService.login(
-                request, httpRequest
-        );
+        var response = authService.login(request, httpRequest);
         return ResponseEntity.ok(ResponseUtils.success(response, "Login Success"));
     }
 

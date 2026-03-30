@@ -7,7 +7,7 @@ spring:
   application:
     name: permission-service
 
-  # db
+# db
   spring:
     application:
       name: permission-service
@@ -34,7 +34,7 @@ spring:
           maximum-pool-size: 20
           minimum-idle: 5
 
-  # flyway
+# flyway
   flyway:
     enabled: true
     locations: classpath:db/migration
@@ -45,13 +45,13 @@ spring:
     out-of-order: true
     clean-disabled: true
 
-  # jpa
+# jpa
   jpa:
     hibernate:
       ddl-auto: none
     show-sql: true
 
-  # kafka
+# kafka
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
 

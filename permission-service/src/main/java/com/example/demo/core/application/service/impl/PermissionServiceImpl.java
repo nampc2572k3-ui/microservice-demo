@@ -1,11 +1,12 @@
 package com.example.demo.core.application.service.impl;
 
+import com.example.demo.common.cache.core.CacheService;
+import com.example.demo.core.application.cache.PermissionCache;
+import com.example.demo.core.application.cache.RolePermissionCache;
 import com.example.demo.core.application.dto.projection.PermissionProjection;
 import com.example.demo.core.application.dto.response.PermissionCheckResponse;
 import com.example.demo.core.application.dto.response.RolePermissionResponse;
-import com.example.demo.core.application.service.CacheService;
 import com.example.demo.core.application.service.PermissionService;
-import com.example.demo.core.application.service.cache.PermissionCacheService;
 import com.example.demo.core.domain.helper.PermissionHelper;
 import com.example.demo.core.persistence.AccountRoleRepository;
 import com.example.demo.core.persistence.RoleRepository;
@@ -14,7 +15,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
+import java.util.List;
+import java.util.Optional;
 
 @RequiredArgsConstructor
 @Service
@@ -22,21 +24,25 @@ import java.util.*;
 public class PermissionServiceImpl implements PermissionService {
 
 
-    private final PermissionCacheService permissionCacheService;
+    private final PermissionCache permissionCache;
+    private final RolePermissionCache rolePermissionCache;
+
     private final RoleRepository roleRepository;
-    private final CacheService cacheService;
     private final AccountRoleRepository  accountRoleRepository;
 
+    private final PermissionHelper permissionHelper;
+
+    private final CacheService cacheService;
 
     @Transactional(readOnly = true)
     @Override
     public PermissionCheckResponse check(String accountId, String path, String method, String secret) {
 
-        PermissionHelper.validateInternalSecret(secret);
-        String normalizedPath = PermissionHelper.normalizePath(path);
+        permissionHelper.validateInternalSecret(secret);
+        String normalizedPath = permissionHelper.normalizePath(path);
 
         Optional<PermissionCheckResponse> cached =
-                permissionCacheService.get(accountId, normalizedPath, method);
+                permissionCache.get(accountId, normalizedPath, method);
 
         if (cached.isPresent()) return cached.get();
 
@@ -45,13 +51,13 @@ public class PermissionServiceImpl implements PermissionService {
         PermissionCheckResponse response =
                 (bitmask == null || bitmask == 0)
                         ? PermissionCheckResponse.deny("NO_PERMISSION")
-                        : PermissionHelper.hasPermission(bitmask, method)
+                        : permissionHelper.hasPermission(bitmask, method)
                         ? PermissionCheckResponse.allow("OK")
                         : PermissionCheckResponse.deny("NO_PERMISSION");
 
         String version = cacheService.getOrInitVersion(accountId);
 
-        permissionCacheService.put(accountId, normalizedPath, method, version, response);
+        permissionCache.put(accountId, normalizedPath, method, version, response);
 
         return response;
     }
@@ -59,39 +65,17 @@ public class PermissionServiceImpl implements PermissionService {
     @Transactional(readOnly = true)
     @Override
     public List<RolePermissionResponse> getPermissionsByAccountId(String accId) {
-        List<PermissionProjection> rows = accountRoleRepository.getAllPermissions(accId);
+        Optional<List<RolePermissionResponse>> cached = rolePermissionCache.get(accId);
+        if (cached.isPresent()) return cached.get();
 
-        // Map: roleName -> (menuCode -> permissions)
-        Map<String, Map<String, Set<String>>> roleMap = new HashMap<>();
+        List<PermissionProjection> daos = accountRoleRepository.getAllPermissions(accId);
+        List<RolePermissionResponse> response = permissionHelper.buildRolePermission(daos);
 
-        for (PermissionProjection row : rows) {
+        String version = cacheService.getOrInitVersion(accId);
+        rolePermissionCache.put(accId, version, response);
 
-            roleMap
-                    .computeIfAbsent(row.getRoleName(), r -> new HashMap<>())
-                    .computeIfAbsent(row.getMenuCode(), m -> new HashSet<>())
-                    .addAll(PermissionHelper.mapBitmaskToPermissions(row.getBitmask()));
-        }
+        return response;
 
-        // Convert sang DTO
-        return roleMap.entrySet().stream()
-                .map(roleEntry -> {
-
-                    List<RolePermissionResponse.MenuPermissionResponse> menus =
-                            roleEntry.getValue().entrySet().stream()
-                                    .map(menuEntry ->
-                                            RolePermissionResponse.MenuPermissionResponse.builder()
-                                                    .code(menuEntry.getKey())
-                                                    .permissions(new ArrayList<>(menuEntry.getValue()))
-                                                    .build()
-                                    )
-                                    .toList();
-
-                    return RolePermissionResponse.builder()
-                            .roleName(roleEntry.getKey())
-                            .menus(menus)
-                            .build();
-                })
-                .toList();
     }
 
 

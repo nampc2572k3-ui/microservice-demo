@@ -3,8 +3,10 @@ package com.example.demo.core.domain.helper;
 import com.example.demo.core.application.dto.request.LoginRequest;
 import com.example.demo.core.domain.model.entity.Account;
 import com.example.demo.core.domain.model.entity.AccountDevice;
+import com.example.demo.core.domain.model.entity.LoginAttempt;
 import com.example.demo.core.domain.model.enums.Platform;
 import com.example.demo.core.persistence.AccountDeviceRepository;
+import com.example.demo.core.persistence.LoginAttemptRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,6 +21,7 @@ import java.util.Optional;
 public class AuthHelper {
 
     private final AccountDeviceRepository accountDeviceRepository;
+    private final LoginAttemptRepository loginAttemptRepository;
 
     public String getClientIp(HttpServletRequest request) {
         String xForwardedFor = request.getHeader("X-Forwarded-For");
@@ -67,6 +70,15 @@ public class AuthHelper {
         return device;
     }
 
-
+    public void recordLoginAttempt(String email, String clientIp, boolean successful, String reason) {
+        LoginAttempt attempt = LoginAttempt.builder()
+                .email(email)
+                .ipAddress(clientIp)
+                .successful(successful)
+                .failureReason(reason)
+                .attemptedAt(LocalDateTime.now())
+                .build();
+        loginAttemptRepository.save(attempt);
+    }
 
 }
