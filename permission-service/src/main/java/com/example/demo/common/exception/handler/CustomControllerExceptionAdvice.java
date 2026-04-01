@@ -4,6 +4,7 @@ import com.example.demo.common.constant.ErrorCode;
 import com.example.demo.common.exception.CustomBusinessException;
 import com.example.demo.common.utils.ResponseUtils;
 import com.example.demo.core.application.dto.response.common.BaseResponse;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.MessageSourceResolvable;
@@ -53,6 +54,16 @@ public class CustomControllerExceptionAdvice {
     public ResponseEntity<?> handleCustomBusinessException(CustomBusinessException e) {
         var response = ResponseUtils.error(e.getErrorCode(), e.getMessage());
         return ResponseEntity.status(e.getErrorCode()).body(response);
+    }
+
+    @ExceptionHandler(JsonProcessingException.class)
+    public ResponseEntity<?> handleJsonProcessingException(JsonProcessingException e) {
+        log.error("JSON processing error: {}", e.getMessage(), e);
+        var response = ResponseUtils.error(
+                ErrorCode.INTERNAL_SEVER_ERROR.getCode(),
+                "Failed to process JSON data"
+        );
+        return ResponseEntity.status(ErrorCode.INTERNAL_SEVER_ERROR.getCode()).body(response);
     }
 
 }

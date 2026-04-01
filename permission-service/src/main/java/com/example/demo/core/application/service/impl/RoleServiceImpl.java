@@ -64,7 +64,7 @@ public class RoleServiceImpl implements RoleService {
         accountRoleRepository.insertIgnore(accId, role.getId());
 
         // Publish event cache invalidation
-        eventPublisher.publishEvent( new RoleAssignedTransactionalEvent(this, accId, role) );
+        eventPublisher.publishEvent(new RoleAssignedTransactionalEvent(this, accId, role) );
 
     }
 
@@ -80,7 +80,7 @@ public class RoleServiceImpl implements RoleService {
         accountRoleRepository.revokeRole(accId, roleId);
 
         // Publish event cache invalidation
-        eventPublisher.publishEvent( new RoleAssignedTransactionalEvent(this, accId, accountRole.getRole()) );
+        eventPublisher.publishEvent(new RoleAssignedTransactionalEvent(this, accId, accountRole.getRole()) );
 
     }
 
