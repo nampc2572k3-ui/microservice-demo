@@ -24,6 +24,7 @@ public enum ErrorCode {
 
     // login
     SPAM_LOGIN_ATTEMPTS(4001, "Too Many Failed Login Attempts. Please Try Again Later."),
+    LOGIN_FAIL(5001, "Login Failed"),
 
 
     INTERNAL_SERVER_ERROR(500, "Internal Server Error");

@@ -10,6 +10,8 @@ import com.example.demo.core.application.dto.response.LoginResponse;
 import com.example.demo.core.application.dto.response.RefreshTokenResponse;
 import com.example.demo.core.application.service.AuthService;
 import com.example.demo.core.application.cache.LoginRateLimitCache;
+import com.example.demo.core.domain.event.internal.LoginFailedEvent;
+import com.example.demo.core.domain.event.internal.LoginSuccessTransactionalEvent;
 import com.example.demo.core.domain.helper.AuthHelper;
 import com.example.demo.core.domain.helper.RefreshTokenHelper;
 import com.example.demo.core.domain.model.entity.Account;
@@ -20,6 +22,7 @@ import com.example.demo.infrastructure.jwt.JwtProvider;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -48,9 +51,11 @@ public class AuthServiceImpl implements AuthService {
     private final PermissionClient permissionClient;
 
     private final AuthHelper authHelper;
-    private final RefreshTokenHelper refreshTokenHelper;
 
     private final LoginRateLimitCache rateLimitCache;
+
+    private final ApplicationEventPublisher eventPublisher;
+
 
     @Transactional(rollbackFor = Exception.class)
     @Override
@@ -93,49 +98,53 @@ public class AuthServiceImpl implements AuthService {
     public LoginResponse login(LoginRequest request, HttpServletRequest httpRequest) {
         String clientIp = authHelper.getClientIp(httpRequest);
 
-        // rate limit by Ip
-        rateLimitCache.check(clientIp, request.getIdentity());
+        try {
+            // rate limit by Ip
+            rateLimitCache.check(clientIp, request.getIdentity());
 
-        // Authenticate & Context setup
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getIdentity(), request.getPassword()));
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-        UserDetailsImpl customUser = (UserDetailsImpl) userDetails;
-        Account acc = customUser.account();
+            // Authenticate & Context setup
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(request.getIdentity(), request.getPassword()));
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+            UserDetailsImpl customUser = (UserDetailsImpl) userDetails;
+            Account acc = customUser.account();
 
-        // save device info
-        AccountDevice device = authHelper.handleAccountDevice(request, acc);
+            // save device info
+            AccountDevice device = authHelper.handleAccountDevice(request, acc);
 
-        String accessToken = jwtProvider.generateAccessToken(userDetails);
-        String refreshToken = jwtProvider.generateRefreshToken(userDetails);
+            String accessToken = jwtProvider.generateAccessToken(userDetails);
+            String refreshToken = jwtProvider.generateRefreshToken(userDetails);
 
-        // save refresh token in database and redis (for rotation and blacklisting)
-        refreshTokenHelper.createRefreshToken(acc, refreshToken, device, clientIp, httpRequest);
+            rateLimitCache.loginSuccess(clientIp, request.getIdentity());
 
-        rateLimitCache.loginSuccess(clientIp, request.getIdentity());
+            // build roles response
+            List<LoginResponse.RolePermissionResponse> roles = permissionClient.getPermissionsSafe(acc.getId());
 
-        // build roles response
-        List<LoginResponse.RolePermissionResponse> roles = permissionClient.getPermissionsSafe(acc.getId());
+            // publish login event
+            eventPublisher.publishEvent(new LoginSuccessTransactionalEvent(acc, refreshToken, device, clientIp, httpRequest, this));
 
-        // publish login event (TODO) for audit log, security monitoring, etc.
-        // update last login time and record login attempt
+            return LoginResponse.builder()
+                    .accountId(acc.getId())
+                    .username(acc.getUsername())
+                    .email(acc.getEmail())
+                    .roles(roles)
+                    .accessToken(accessToken)
+                    .refreshToken(refreshToken)
+                    .build();
 
+        } catch (Exception e) {
+            eventPublisher.publishEvent(
+                  new LoginFailedEvent(request.getIdentity(), clientIp, e.getMessage())
+            );
 
-//        acc.setLastLoginAt(LocalDateTime.now());
-//        accountRepository.save(acc);
-//
-//        authHelper.recordLoginAttempt(acc.getEmail(), clientIp, true, null);
+            log.error(e.getMessage());
 
-        return LoginResponse.builder()
-                .accountId(acc.getId())
-                .username(acc.getUsername())
-                .email(acc.getEmail())
-                .roles(roles)
-                .accessToken(accessToken)
-                .refreshToken(refreshToken)
-                .build();
-
+            throw new CustomBusinessException(
+                    ErrorCode.LOGIN_FAIL.getCode(),
+                    e.getMessage()
+            );
+        }
     }
 
     @Transactional(rollbackFor = Exception.class)

@@ -1,6 +1,5 @@
 package com.example.demo.core.intergration.publisher;
 
-import com.example.demo.core.domain.event.external.PermissionChangedEvent;
 import com.example.demo.core.domain.event.external.RoleAssignedEvent;
 import com.example.demo.core.domain.event.external.RoleRevokedEvent;
 import com.example.demo.core.domain.model.entity.Role;
@@ -45,9 +44,6 @@ public class PermissionEventPublisher {
                         .occurredAt(LocalDateTime.now())
                         .build()
         );
-
-        outboxWriter.write(permissionChangedTopic, accId,
-                buildPermisionChanged(accId, "ROLE_REVOKED"));
     }
 
     public void publishRoleAssigned(String accId, Role role) throws JsonProcessingException {
@@ -61,18 +57,6 @@ public class PermissionEventPublisher {
                         .occurredAt(LocalDateTime.now())
                         .build()
         );
-
-        outboxWriter.write(permissionChangedTopic, accId,
-                buildPermisionChanged(accId, "ROLE_ASSIGNED"));
-    }
-
-
-    public PermissionChangedEvent buildPermisionChanged(String accId, String type) {
-        return PermissionChangedEvent.builder()
-                .eventId(UUID.randomUUID().toString())
-                .accountId(accId)
-                .changeType(type)
-                .build();
     }
 
 

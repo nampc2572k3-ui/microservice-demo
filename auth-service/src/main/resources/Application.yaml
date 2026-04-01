@@ -106,7 +106,6 @@ eureka:
 app:
   kafka:
     topics:
-      login-success: auth.login.success
       login-permission-warmup: auth.login.permission-warmup
 
 # logging

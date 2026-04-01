@@ -9,19 +9,9 @@ import org.springframework.kafka.config.TopicBuilder;
 @Configuration
 public class KafkaTopicConfig {
 
-    @Value("${app.kafka.topics.login-success}")
-    private String loginSuccessTopic;
 
     @Value("${app.kafka.topics.login-permission-warmup}")
     private String loginPermissionWarmupTopic;
-
-    @Bean
-    public NewTopic loginSuccessTopic() {
-        return TopicBuilder.name(loginSuccessTopic)
-                .partitions(3)
-                .replicas(2)
-                .build();
-    }
 
 
     @Bean

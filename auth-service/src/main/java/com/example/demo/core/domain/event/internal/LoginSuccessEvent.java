@@ -1,5 +1,8 @@
 package com.example.demo.core.domain.event.internal;
 
+import com.example.demo.core.domain.model.entity.Account;
+import com.example.demo.core.domain.model.entity.AccountDevice;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -11,12 +14,11 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class LoginSuccessEvent {
 
-    private String accountId;
-    private String email;
-    private String deviceId;
+    private Account account;
+    private String refreshToken;
+    AccountDevice devide;
     private String clientIp;
-    private String userAgent;
+    private HttpServletRequest request;
     private LocalDateTime loginTime;
-    private String eventId;
 
 }
