@@ -21,6 +21,10 @@ public class TokenCache {
                 );
     }
 
+    public String getRefreshToken(String accId, String refreshToken) {
+        return redisTemplate.opsForValue().get(CacheKeyFactory.refreshToken(refreshToken) + accId);
+    }
+
 
 
 }

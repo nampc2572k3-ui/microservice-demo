@@ -2,6 +2,7 @@ package com.example.demo.infrastructure.jwt;
 
 
 import com.example.demo.common.constant.ErrorCode;
+import com.example.demo.common.exception.CustomBusinessException;
 import com.example.demo.infrastructure.identity.UserDetailsImpl;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
@@ -99,14 +100,14 @@ public class JwtProvider {
                     .parseSignedClaims(token);
 
         } catch (ExpiredJwtException e) {
-            throw new BadCredentialsException(
-                    ErrorCode.AUTH_TOKEN_EXPIRED.getMessage(), e);
+            throw new CustomBusinessException(
+                    ErrorCode.AUTH_TOKEN_EXPIRED.getCode(), ErrorCode.AUTH_TOKEN_EXPIRED.getMessage());
         } catch (MalformedJwtException e) {
-            throw new BadCredentialsException(
-                    ErrorCode.AUTH_INVALID_TOKEN.getMessage(), e);
+            throw new CustomBusinessException(
+                    ErrorCode.AUTH_INVALID_TOKEN.getCode(), ErrorCode.AUTH_INVALID_TOKEN.getMessage());
         } catch (SignatureException e) {
-            throw new BadCredentialsException(
-                    ErrorCode.AUTH_TOKEN_SIGNATURE_INVALID.getMessage(), e);
+            throw new CustomBusinessException(
+                    ErrorCode.AUTH_TOKEN_SIGNATURE_INVALID.getCode(), ErrorCode.AUTH_TOKEN_SIGNATURE_INVALID.getMessage());
         }
     }
 
@@ -133,23 +134,12 @@ public class JwtProvider {
         return expiration.getTime() - now;
     }
 
-    public boolean isRefreshToken(String token) {
-        return "refresh".equals(parseStringClaim(token));
-    }
 
     private String parseStringClaim(String token) {
         var raw = extractClaim(token, claims -> claims.get(JwtProvider.CLAIM_TYPE));
         return Objects.toString(raw, null);
     }
 
-
-    @SuppressWarnings("unchecked")
-    public Set<String> extractAuthorities(String token) {
-        return new HashSet<>(
-                extractClaim(token,
-                        claims -> claims.get(CLAIM_AUTHORITIES, List.class))
-        );
-    }
 
     public String parseJti(String token) {
         return extractClaim(token, Claims::getId);

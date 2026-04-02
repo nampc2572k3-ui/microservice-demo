@@ -4,6 +4,7 @@ import com.example.demo.common.constant.ErrorCode;
 import com.example.demo.common.exception.CustomBusinessException;
 import com.example.demo.core.adapter.http.PermissionClient;
 import com.example.demo.core.application.cache.LoginRateLimitCache;
+import com.example.demo.core.application.cache.TokenCache;
 import com.example.demo.core.application.dto.request.LoginRequest;
 import com.example.demo.core.application.dto.request.RefreshTokenRequest;
 import com.example.demo.core.application.dto.request.RegisterRequest;
@@ -14,7 +15,9 @@ import com.example.demo.core.domain.event.internal.LoginSuccessTransactionalEven
 import com.example.demo.core.domain.helper.AuthHelper;
 import com.example.demo.core.domain.model.entity.Account;
 import com.example.demo.core.domain.model.entity.AccountDevice;
+import com.example.demo.core.domain.model.entity.RefreshToken;
 import com.example.demo.core.persistence.AccountRepository;
+import com.example.demo.core.persistence.RefreshTokenRepository;
 import com.example.demo.infrastructure.identity.UserDetailsImpl;
 import com.example.demo.infrastructure.jwt.JwtProvider;
 import jakarta.servlet.http.HttpServletRequest;
@@ -38,11 +41,10 @@ import java.util.List;
 public class AuthServiceImpl implements AuthService {
 
     private final AccountRepository accountRepository;
+    private final RefreshTokenRepository refreshTokenRepository;
 
     private final PasswordEncoder passwordEncoder;
-
     private final AuthenticationManager authenticationManager;
-
     private final JwtProvider jwtProvider;
 
     private final PermissionClient permissionClient;
@@ -50,6 +52,7 @@ public class AuthServiceImpl implements AuthService {
     private final AuthHelper authHelper;
 
     private final LoginRateLimitCache rateLimitCache;
+    private final TokenCache tokenCache;
 
     private final ApplicationEventPublisher eventPublisher;
 
@@ -87,6 +90,7 @@ public class AuthServiceImpl implements AuthService {
         accountRepository.save(account);
 
         // send verification email (TODO) publish event to send email
+
 
     }
 
@@ -145,6 +149,31 @@ public class AuthServiceImpl implements AuthService {
     @Transactional(rollbackFor = Exception.class)
     @Override
     public RefreshTokenResponse refreshToken(RefreshTokenRequest request) {
+        String refreshToken = request.getRefreshToken();
+
+        String accId = jwtProvider.extractAccountId(refreshToken);
+
+        String stored = tokenCache.getRefreshToken(accId, refreshToken);
+        if (stored == null || !stored.equals(refreshToken)) {
+            throw new CustomBusinessException(
+                    ErrorCode.AUTH_INVALID_TOKEN.getCode(),
+                    ErrorCode.AUTH_INVALID_TOKEN.getMessage()
+            );
+        }
+
+        // load account
+        Account acc = accountRepository.findById(accId)
+                .orElseThrow(() -> new CustomBusinessException(
+                        ErrorCode.USER_NOT_FOUND.getCode(),
+                        ErrorCode.USER_NOT_FOUND.getMessage())
+                );
+
+        String jti = jwtProvider.parseJti(refreshToken);
+
+        RefreshToken session = refreshTokenRepository.getRefreshTokensByJti(jti);
+
+
+
         return null;
     }
 

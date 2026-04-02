@@ -8,10 +8,10 @@ public class CacheKeyFactory {
     // build token key
     public static final String TOKEN_BLACKLIST_PREFIX = PREFIX + "token:blacklist:";
 
-    public static final String REFRESH_TOKEN_PREFIX = PREFIX + "refresh-token:";
+    public static final String SESSION_PREFIX = PREFIX + "session:";
 
-    public static String refreshToken(String token) {
-        return REFRESH_TOKEN_PREFIX + token;
+    public static String buildSessionKey(String token) {
+        return SESSION_PREFIX + token;
     }
 
 
