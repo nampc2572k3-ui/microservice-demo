@@ -30,10 +30,6 @@ public class CacheServiceImpl implements CacheService {
             CacheValue<?> cache = (CacheValue<?>) value;
             long now = System.currentTimeMillis();
 
-            if (cache.getExpireAt() - now <= REFRESH_BEFORE_MS) {
-                // refresh async should be handled outside
-            }
-
             return Optional.of((T) cache.getData());
         } catch (Exception ex) {
             log.warn("Redis read failed for key {}: {}", key, ex.getMessage());

@@ -10,8 +10,8 @@ public class CacheKeyFactory {
 
     public static final String SESSION_PREFIX = PREFIX + "session:";
 
-    public static String buildSessionKey(String token) {
-        return SESSION_PREFIX + token;
+    public static String buildSessionKey(String accId, String jti) {
+        return SESSION_PREFIX + accId + ":" + jti;
     }
 
 

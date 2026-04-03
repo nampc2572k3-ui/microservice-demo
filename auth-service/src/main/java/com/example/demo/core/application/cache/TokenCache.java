@@ -1,30 +1,36 @@
 package com.example.demo.core.application.cache;
 
 import com.example.demo.common.cache.CacheKeyFactory;
+import com.example.demo.core.domain.model.entity.RefreshToken;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 public class TokenCache {
 
-    private final StringRedisTemplate redisTemplate;
+    private final RedisTemplate<String, Object> redisTemplate;;
 
-    public void storeRefreshToken(String accId, String refreshToken, long expirationMillis) {
+    public void storeSession(String accId, RefreshToken session, long ttlSeconds) {
         redisTemplate.opsForValue()
                 .set(
-                        CacheKeyFactory.refreshToken(refreshToken) + accId,
-                        refreshToken, Duration.ofMillis(expirationMillis)
+                        CacheKeyFactory.buildSessionKey(accId, session.getJti()),
+                        session, Duration.ofMillis(ttlSeconds)
                 );
     }
 
-    public String getRefreshToken(String accId, String refreshToken) {
-        return redisTemplate.opsForValue().get(CacheKeyFactory.refreshToken(refreshToken) + accId);
+    public Optional<RefreshToken> getRefreshToken(String accId, String jti) {
+        return redisTemplate.opsForValue().get(CacheKeyFactory.buildSessionKey(accId, jti));
     }
 
+    private RefreshToken fromObject(Object object) {
+        return null;
+    }
 
 
 }
