@@ -13,5 +13,5 @@ public interface AuthService {
 
     LoginResponse login(@Valid LoginRequest request, HttpServletRequest httpRequest);
 
-    RefreshTokenResponse refreshToken(@Valid RefreshTokenRequest request);
+    RefreshTokenResponse refreshToken(@Valid RefreshTokenRequest request, HttpServletRequest httpRequest);
 }

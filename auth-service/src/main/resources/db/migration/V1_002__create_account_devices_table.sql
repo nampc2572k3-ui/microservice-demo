@@ -1,6 +1,6 @@
 CREATE TABLE account_devices
 (
-    id             BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id             VARCHAR(255) PRIMARY KEY,
 
     device_name    VARCHAR(255),
 

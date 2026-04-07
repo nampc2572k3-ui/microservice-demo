@@ -49,10 +49,5 @@ public class Account extends Audit {
     @Column(nullable = false)
     private boolean locked;
 
-    @OneToMany(mappedBy = "account", fetch = FetchType.LAZY)
-    private List<AccountRole> accountRoles;
-
-    @OneToMany(mappedBy = "account")
-    private List<RefreshToken> refreshTokens;
 
 }

@@ -73,8 +73,8 @@ public class JwtProvider {
 
         Map<String, Object> claims = Map.of(
                 CLAIM_TYPE, type,
-                CLAIM_ACCOUNT_ID, customUser.account().getId(),
-                CLAIM_USERNAME, customUser.account().getUsername(),
+                CLAIM_ACCOUNT_ID, customUser.getAccount().getId(),
+                CLAIM_USERNAME, customUser.getAccount().getUsername(),
                 CLAIM_AUTHORITIES, authorities
         );
 

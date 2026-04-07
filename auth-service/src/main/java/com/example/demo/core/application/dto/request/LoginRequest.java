@@ -17,7 +17,7 @@ public class LoginRequest {
 
     // Device information for security and push notifications
     @Positive(message = "Device ID must be greater than 0")
-    private long deviceId;
+    private String deviceId;
 
     @NotBlank(message = "Device name is required")
     @Size(min = 1, max = 100, message = "Device name must be 1-100 characters")

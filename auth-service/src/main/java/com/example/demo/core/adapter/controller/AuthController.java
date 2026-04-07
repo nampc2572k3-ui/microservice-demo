@@ -8,7 +8,6 @@ import com.example.demo.core.application.dto.response.LoginResponse;
 import com.example.demo.core.application.dto.response.RefreshTokenResponse;
 import com.example.demo.core.application.dto.response.common.BaseResponse;
 import com.example.demo.core.application.service.AuthService;
-import com.example.demo.core.domain.helper.AuthHelper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -24,8 +23,6 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final AuthService authService;
-
-    private final AuthHelper authHelper;
 
     @PostMapping("/register")
     public ResponseEntity<BaseResponse<Void>> register(@RequestBody @Valid RegisterRequest request) {
@@ -43,9 +40,12 @@ public class AuthController {
     }
 
     @PostMapping("/refresh")
-    public ResponseEntity<BaseResponse<RefreshTokenResponse>> refreshToken(@RequestBody @Valid RefreshTokenRequest request) {
-        var response = authService.refreshToken(request);
-        return ResponseEntity.ok(ResponseUtils.success("Token Refresh Success"));
+    public ResponseEntity<BaseResponse<RefreshTokenResponse>> refreshToken(
+            @RequestBody @Valid RefreshTokenRequest request,
+            HttpServletRequest httpRequest
+    ) {
+        var response = authService.refreshToken(request, httpRequest);
+        return ResponseEntity.ok(ResponseUtils.success(response ,"Token Refresh Success"));
     }
 
 

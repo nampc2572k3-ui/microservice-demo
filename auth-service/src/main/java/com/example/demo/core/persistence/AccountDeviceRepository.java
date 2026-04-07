@@ -7,6 +7,6 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 @Repository
-public interface AccountDeviceRepository extends JpaRepository<AccountDevice, Long> {
-    Optional<AccountDevice> findByIdAndAccountId(Long deviceId, String accId);
+public interface AccountDeviceRepository extends JpaRepository<AccountDevice, String> {
+    Optional<AccountDevice> findByIdAndAccountId(String deviceId, String accId);
 }

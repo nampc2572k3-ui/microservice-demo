@@ -27,6 +27,11 @@ public enum ErrorCode {
     BAD_CREDENTIALS(401, "Bad Credentials"),
 
 
+    // session
+    SESSION_INVALID(402, "Refresh token has beean used or revoked"),
+    SESSION_INVALID_CLIENT_IP(403, "Invalid Client IP"),
+    BROWSER_MISMATCH(404, "Browser Mismatch"),
+
     INTERNAL_SERVER_ERROR(500, "Internal Server Error");
 
     private final int code;
