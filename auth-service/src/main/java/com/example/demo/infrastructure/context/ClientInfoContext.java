@@ -1,8 +1,8 @@
-package com.example.demo.infrastructure.metadata;
+package com.example.demo.infrastructure.context;
 
 import java.io.Serializable;
 
-public record SessionMetadata(
+public record ClientInfoContext(
         String deviceId,
         String clientIp,
         String userAgent

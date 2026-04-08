@@ -3,7 +3,9 @@ package com.example.demo.core.intergration.relay;
 
 import com.example.demo.core.domain.event.internal.LoginSuccessEvent;
 import com.example.demo.core.domain.event.internal.LoginSuccessTransactionalEvent;
+import com.example.demo.core.domain.event.internal.RegisterSuccessTransactionalEvent;
 import com.example.demo.core.intergration.publisher.LoginEventPublisher;
+import com.example.demo.core.intergration.publisher.RegisterEventPublisher;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +22,7 @@ import java.time.LocalDateTime;
 public class TransactionalKafkaRelay {
 
     private final LoginEventPublisher loginEventPublisher;
+    private final RegisterEventPublisher registerEventPublisher;
     private final ApplicationEventPublisher eventPublisher;
 
     @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
@@ -34,6 +37,13 @@ public class TransactionalKafkaRelay {
                         event.getDevide(), event.getClientIp(),
                         event.getRequest(), LocalDateTime.now()
                 )
+        );
+    }
+
+    @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
+    public void onRegisterSuccess(RegisterSuccessTransactionalEvent event) throws JsonProcessingException {
+        registerEventPublisher.publishRegisterSuccess(
+                event.getAccount()
         );
     }
 

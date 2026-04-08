@@ -8,19 +8,17 @@ import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-
 import lombok.extern.slf4j.Slf4j;
-
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
-import java.time.LocalDateTime;
-import java.util.*;
+import java.util.Date;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -101,22 +99,18 @@ public class JwtProvider {
 
         } catch (ExpiredJwtException e) {
             throw new CustomBusinessException(
-                    ErrorCode.AUTH_TOKEN_EXPIRED.getCode(), ErrorCode.AUTH_TOKEN_EXPIRED.getMessage());
+                    ErrorCode.AUTH_TOKEN_EXPIRED);
         } catch (MalformedJwtException e) {
             throw new CustomBusinessException(
-                    ErrorCode.AUTH_INVALID_TOKEN.getCode(), ErrorCode.AUTH_INVALID_TOKEN.getMessage());
+                    ErrorCode.AUTH_INVALID_TOKEN);
         } catch (SignatureException e) {
             throw new CustomBusinessException(
-                    ErrorCode.AUTH_TOKEN_SIGNATURE_INVALID.getCode(), ErrorCode.AUTH_TOKEN_SIGNATURE_INVALID.getMessage());
+                    ErrorCode.AUTH_TOKEN_SIGNATURE_INVALID);
         }
     }
 
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
-    }
-
-    public boolean isTokenValid(String token, UserDetails userDetails) {
-        return userDetails.getUsername().equals(extractUsername(token)) && !isTokenExpired(token);
     }
 
     public boolean isTokenExpired(String token) {
@@ -128,26 +122,16 @@ public class JwtProvider {
         return raw != null ? raw.toString() : null;
     }
 
+    public String parseJti(String token) {
+        return extractClaim(token, Claims::getId);
+    }
+
+    // get time remaining before token expires
     public long getTokenExpirationRemaining(String token) {
         Date expiration = extractClaim(token, Claims::getExpiration);
         long now = System.currentTimeMillis();
         return expiration.getTime() - now;
     }
 
-
-    private String parseStringClaim(String token) {
-        var raw = extractClaim(token, claims -> claims.get(JwtProvider.CLAIM_TYPE));
-        return Objects.toString(raw, null);
-    }
-
-
-    public String parseJti(String token) {
-        return extractClaim(token, Claims::getId);
-    }
-
-    public LocalDateTime extractExpiration(String token) {
-        Date expiration = extractClaim(token, Claims::getExpiration);
-        return LocalDateTime.ofInstant(expiration.toInstant(), TimeZone.getDefault().toZoneId());
-    }
 
 }

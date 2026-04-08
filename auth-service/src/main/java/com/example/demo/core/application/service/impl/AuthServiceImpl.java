@@ -2,6 +2,7 @@ package com.example.demo.core.application.service.impl;
 
 import com.example.demo.common.constant.ErrorCode;
 import com.example.demo.common.exception.CustomBusinessException;
+import com.example.demo.core.application.cache.BlacklistTokenCache;
 import com.example.demo.core.application.cache.SessionCache;
 import com.example.demo.core.application.dto.request.LoginRequest;
 import com.example.demo.core.application.dto.request.RefreshTokenRequest;
@@ -10,13 +11,14 @@ import com.example.demo.core.application.dto.response.LoginResponse;
 import com.example.demo.core.application.dto.response.RefreshTokenResponse;
 import com.example.demo.core.application.service.AuthService;
 import com.example.demo.core.domain.event.internal.LoginSuccessTransactionalEvent;
+import com.example.demo.core.domain.event.internal.RegisterSuccessTransactionalEvent;
 import com.example.demo.core.domain.helper.AuthHelper;
 import com.example.demo.core.domain.model.entity.Account;
 import com.example.demo.core.domain.model.entity.AccountDevice;
 import com.example.demo.core.persistence.AccountRepository;
 import com.example.demo.infrastructure.identity.UserDetailsImpl;
 import com.example.demo.infrastructure.jwt.JwtProvider;
-import com.example.demo.infrastructure.metadata.SessionMetadata;
+import com.example.demo.infrastructure.context.ClientInfoContext;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,6 +32,8 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -53,28 +57,25 @@ public class AuthServiceImpl implements AuthService {
     private final ApplicationEventPublisher eventPublisher;
 
     private final SessionCache sessionCache;
+    private final BlacklistTokenCache blacklistTokenCache;
 
 
     @Transactional(rollbackFor = Exception.class)
     @Override
     public void register(RegisterRequest request) {
 
-        // check username email exist
         if (accountRepository.existsAccountByUsername(request.getUsername())) {
             throw new CustomBusinessException(
-                    ErrorCode.USERNAME_ALREADY_EXISTS.getCode(),
-                    ErrorCode.USERNAME_ALREADY_EXISTS.getMessage()
+                    ErrorCode.USERNAME_ALREADY_EXISTS
             );
         }
 
         if (accountRepository.existsAccountByEmail(request.getEmail())) {
             throw new CustomBusinessException(
-                    ErrorCode.EMAIL_ALREADY_EXISTS.getCode(),
-                    ErrorCode.EMAIL_ALREADY_EXISTS.getMessage()
+                    ErrorCode.EMAIL_ALREADY_EXISTS
             );
         }
 
-        // create account
         Account account = Account.builder()
                 .username(request.getUsername())
                 .email(request.getEmail())
@@ -87,44 +88,39 @@ public class AuthServiceImpl implements AuthService {
 
         accountRepository.save(account);
 
-        // send verification email (TODO) publish event to send email
-
+        //  publish event to send email
+        eventPublisher.publishEvent(new RegisterSuccessTransactionalEvent(this, account));
 
     }
 
     @Transactional(rollbackFor = Exception.class)
     @Override
     public LoginResponse login(LoginRequest request, HttpServletRequest httpRequest) {
-        String clientIp = authHelper.getClientIp(httpRequest);
-
-        String userAgent = httpRequest.getHeader("User-Agent");
+        ClientInfoContext clientInfo = authHelper.extract(httpRequest);
 
         try {
-            // Authenticate & Context setup
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.getIdentity(), request.getPassword()));
             SecurityContextHolder.getContext().setAuthentication(authentication);
             UserDetails userDetails = (UserDetails) authentication.getPrincipal();
             UserDetailsImpl customUser = (UserDetailsImpl) userDetails;
-            Account acc = customUser.getAccount();
+            Account acc = Objects.requireNonNull(customUser).getAccount();
 
-            // save device info
             AccountDevice device = authHelper.handleAccountDevice(request, acc);
 
             String accessToken = jwtProvider.generateAccessToken(userDetails);
             String refreshToken = jwtProvider.generateRefreshToken(userDetails);
 
-            // store refresh token
             sessionCache.put(
                     jwtProvider.parseJti(refreshToken), acc.getId(),
-                    device.getId(), userAgent,
-                    clientIp
+                    device.getId(), clientInfo.userAgent(),
+                    clientInfo.clientIp()
             );
 
-            // publish login event
-            eventPublisher.publishEvent(
-                    new LoginSuccessTransactionalEvent(acc, refreshToken, device, clientIp, httpRequest, this)
-            );
+            // publish event login
+            eventPublisher.publishEvent(new LoginSuccessTransactionalEvent(
+                            acc, refreshToken, device,  clientInfo.clientIp(), httpRequest, this
+                    ));
 
             return LoginResponse.builder()
                     .accountId(acc.getId())
@@ -136,7 +132,7 @@ public class AuthServiceImpl implements AuthService {
                     .build();
 
         } catch (Exception e) {
-            authHelper.recordLoginAttempt(request.getIdentity(), clientIp, false, e.getMessage());
+            authHelper.recordLoginAttempt(request.getIdentity(), clientInfo.clientIp(), false, e.getMessage());
 
             log.error(e.getMessage());
 
@@ -152,51 +148,17 @@ public class AuthServiceImpl implements AuthService {
     public RefreshTokenResponse refreshToken(RefreshTokenRequest request, HttpServletRequest httpRequest) {
 
         String refreshToken = request.getRefreshToken();
-
-        String clientIp = authHelper.getClientIp(httpRequest);
-
+        ClientInfoContext clientInfo = authHelper.extract(httpRequest);
         String accId = jwtProvider.extractAccountId(refreshToken);
         String jti = jwtProvider.parseJti(refreshToken);
 
-        String userAgent = httpRequest.getHeader("User-Agent");
-        String deviceId = httpRequest.getHeader("Device-Id");
+        authHelper.validateSession(clientInfo, accId, jti, refreshToken);
 
-
-        SessionMetadata cachedMetadata = sessionCache.get(jti, accId)
-                .orElseThrow( () -> new CustomBusinessException (
-                    ErrorCode.SESSION_INVALID.getCode(),
-                    ErrorCode.SESSION_INVALID.getMessage()
-                ));
-
-        if(cachedMetadata.deviceId() != deviceId){
-            // put refresh token into blacklist todo
-            throw new CustomBusinessException(
-                    ErrorCode.SESSION_INVALID_CLIENT_IP.getCode(),
-                    ErrorCode.SESSION_INVALID_CLIENT_IP.getMessage()
-            );
-        }
-
-        if(cachedMetadata.userAgent() != userAgent || userAgent == null){
-            // put refresh token into blacklist todo
-            throw new CustomBusinessException(
-                    ErrorCode.BROWSER_MISMATCH.getCode(),
-                    ErrorCode.BROWSER_MISMATCH.getMessage()
-            );
-        }
-
-        // Check 3: IP (Nếu IP thay đổi, có thể chỉ log lại hoặc yêu cầu xác thực thêm)
-        if (!cachedMetadata.clientIp().equals(clientIp)) {
-            log.info("IP thay đổi từ {} sang {} cho JTI: {}", cachedMetadata.clientIp(), clientIp, jti);
-            // Với IP, chúng ta có thể nới lỏng hơn nếu DeviceID và UserAgent vẫn khớp.
-        }
-
-        // put refresh token into blacklist todo
+        blacklistTokenCache.put(refreshToken, jwtProvider.getTokenExpirationRemaining(refreshToken));
 
         Account acc = accountRepository.findById(accId)
                 .orElseThrow(() -> new CustomBusinessException(
-                        ErrorCode.USER_NOT_FOUND.getCode(),
-                        ErrorCode.USER_NOT_FOUND.getMessage()));
-
+                        ErrorCode.USER_NOT_FOUND));
 
         UserDetailsImpl userDetails = UserDetailsImpl.builder()
                 .account(acc)
@@ -205,11 +167,10 @@ public class AuthServiceImpl implements AuthService {
         String newAccessToken = jwtProvider.generateAccessToken(userDetails);
         String newRefreshToken = jwtProvider.generateRefreshToken(userDetails);
 
-        // store refresh token
         sessionCache.put(
                 jwtProvider.parseJti(newRefreshToken), acc.getId(),
-                deviceId, userAgent,
-                clientIp
+                clientInfo.deviceId(), clientInfo.userAgent(),
+                clientInfo.clientIp()
         );
 
         return RefreshTokenResponse.builder()

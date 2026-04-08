@@ -13,10 +13,21 @@ public class KafkaTopicConfig {
     @Value("${app.kafka.topics.login-permission-warmup}")
     private String loginPermissionWarmupTopic;
 
+    @Value(("${app.kafja.topics.auth.register.success}"))
+    private String registerSuccessTopic;
+
 
     @Bean
     public NewTopic loginPermissionWarmupTopic() {
         return TopicBuilder.name(loginPermissionWarmupTopic)
+                .partitions(3)
+                .replicas(2)
+                .build();
+    }
+
+    @Bean
+    public NewTopic registerSuccessTopic() {
+        return TopicBuilder.name(registerSuccessTopic)
                 .partitions(3)
                 .replicas(2)
                 .build();

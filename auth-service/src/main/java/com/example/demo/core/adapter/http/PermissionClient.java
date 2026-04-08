@@ -26,8 +26,7 @@ public interface PermissionClient {
             }
         } catch (Exception e) {
             throw new CustomBusinessException(
-                    ErrorCode.FAILED_TO_ASSIGN_ROLE.getCode(),
-                    ErrorCode.FAILED_TO_ASSIGN_ROLE.getMessage()
+                    ErrorCode.FAILED_TO_ASSIGN_ROLE
             );
         }
         return Collections.emptyList();

@@ -107,6 +107,7 @@ app:
   kafka:
     topics:
       login-permission-warmup: auth.login.permission-warmup
+      register-success: auth.register.success
 
 # logging
 logging:

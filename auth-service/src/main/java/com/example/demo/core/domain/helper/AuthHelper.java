@@ -1,5 +1,9 @@
 package com.example.demo.core.domain.helper;
 
+import com.example.demo.common.constant.ErrorCode;
+import com.example.demo.common.exception.CustomBusinessException;
+import com.example.demo.core.application.cache.BlacklistTokenCache;
+import com.example.demo.core.application.cache.SessionCache;
 import com.example.demo.core.application.dto.request.LoginRequest;
 import com.example.demo.core.domain.model.entity.Account;
 import com.example.demo.core.domain.model.entity.AccountDevice;
@@ -7,6 +11,8 @@ import com.example.demo.core.domain.model.entity.LoginAttempt;
 import com.example.demo.core.domain.model.enums.Platform;
 import com.example.demo.core.persistence.AccountDeviceRepository;
 import com.example.demo.core.persistence.LoginAttemptRepository;
+import com.example.demo.infrastructure.context.ClientInfoContext;
+import com.example.demo.infrastructure.jwt.JwtProvider;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,7 +30,12 @@ public class AuthHelper {
     private final AccountDeviceRepository accountDeviceRepository;
     private final LoginAttemptRepository loginAttemptRepository;
 
-    public String getClientIp(HttpServletRequest request) {
+    private final SessionCache sessionCache;
+    private final BlacklistTokenCache blacklistTokenCache;
+
+    private final JwtProvider jwtProvider;
+
+    private static String getClientIp(HttpServletRequest request) {
         String xForwardedFor = request.getHeader("X-Forwarded-For");
         if (xForwardedFor != null && !xForwardedFor.isEmpty()) {
             return xForwardedFor.split(",")[0].trim();
@@ -34,6 +45,16 @@ public class AuthHelper {
             return xRealIp;
         }
         return request.getRemoteAddr();
+    }
+
+    public ClientInfoContext extract(HttpServletRequest request) {
+        String deviceId = request.getHeader("X-Device-Id");
+
+        String userAgent = request.getHeader("User-Agent");
+
+        String clientIp = getClientIp(request);
+
+        return new ClientInfoContext(deviceId, clientIp, userAgent);
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -82,6 +103,37 @@ public class AuthHelper {
                 .attemptedAt(LocalDateTime.now())
                 .build();
         loginAttemptRepository.save(attempt);
+    }
+
+    public void validateSession(ClientInfoContext clientInfo, String jti, String accId, String refreshToken) {
+        ClientInfoContext cachedInfo = sessionCache.get(jti, accId)
+                .orElseThrow(() -> new CustomBusinessException(ErrorCode.SESSION_INVALID));
+
+        if (blacklistTokenCache.isBlacklisted(refreshToken)) {
+            throw new CustomBusinessException(ErrorCode.SESSION_INVALID);
+        }
+
+        if(cachedInfo.deviceId().equals(clientInfo.deviceId()) ){
+            blacklistTokenCache.put(refreshToken, jwtProvider.getTokenExpirationRemaining(refreshToken));
+            throw new CustomBusinessException(
+                    ErrorCode.SESSION_INVALID_CLIENT_IP
+            );
+        }
+
+        if(cachedInfo.userAgent().equals(clientInfo.userAgent()) ||
+                clientInfo.userAgent() == null
+        ){
+            blacklistTokenCache.put(refreshToken, jwtProvider.getTokenExpirationRemaining(refreshToken));
+            throw new CustomBusinessException(
+                    ErrorCode.BROWSER_MISMATCH
+            );
+        }
+
+
+        if (!cachedInfo.clientIp().equals(clientInfo.clientIp())) {
+            log.info("Detected IP change for JTI {}: {} -> {}",
+                    jti, cachedInfo.clientIp(), clientInfo.clientIp());
+        }
     }
 
 }

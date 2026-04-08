@@ -1,6 +1,6 @@
 package com.example.demo.core.intergration.publisher;
 
-import com.example.demo.core.domain.event.external.LoginPermissionWarmupEvent;
+import com.example.demo.core.domain.event.external.RegisterSuccessEvent;
 import com.example.demo.core.domain.model.entity.Account;
 import com.example.demo.infrastructure.outbox.OutboxWriter;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -14,23 +14,23 @@ import java.util.UUID;
 @Component
 @RequiredArgsConstructor
 @Slf4j
-public class LoginEventPublisher {
+public class RegisterEventPublisher {
 
     private final OutboxWriter outboxWriter;
 
-    @Value("${app.kafka.topics.login-permission-warmup}")
-    private String loginPermissionWarmupTopic;
+    @Value(("${app.kafja.topics.auth.register.success}"))
+    private String registerSuccessTopic;
 
-    public void publishLoginSuccess(Account acc) throws JsonProcessingException {
+    public void publishRegisterSuccess(Account acc) throws JsonProcessingException {
         outboxWriter.write(
-                loginPermissionWarmupTopic,
+                registerSuccessTopic,
                 acc.getId(),
-                LoginPermissionWarmupEvent.builder()
+                RegisterSuccessEvent.builder()
                         .eventId(UUID.randomUUID().toString())
                         .accountId(acc.getId())
+                        .username(acc.getUsername())
                         .build()
         );
     }
-
 
 }

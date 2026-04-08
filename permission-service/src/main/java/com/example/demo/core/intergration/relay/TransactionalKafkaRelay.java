@@ -38,4 +38,9 @@ public class TransactionalKafkaRelay {
     public void onRoleAssignedRollback(RoleAssignedTransactionalEvent event) {
         log.warn("Role assignment rolled back for account {}, no Kafka event sent", event.getAccountId());
     }
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_ROLLBACK)
+    public void onRoleRevokedRollback(RoleRevokedTransactionalEvent event) {
+        log.warn("Role revoked for account {}, no Kafka event sent", event.getAccountId());
+    }
 }
