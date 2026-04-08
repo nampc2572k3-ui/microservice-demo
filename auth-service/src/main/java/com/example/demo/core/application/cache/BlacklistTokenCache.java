@@ -12,7 +12,6 @@ import java.util.Optional;
 @Service
 public class BlacklistTokenCache extends AbstractCacheService {
 
-
     private final RedisTemplate<String, Object> redisTemplate;
 
     public BlacklistTokenCache(CacheService cacheService, RedisTemplate<String, Object> redisTemplate) {
@@ -21,13 +20,13 @@ public class BlacklistTokenCache extends AbstractCacheService {
     }
 
     public Optional<String> get(String token) {
-        String key =  CacheKeyFactory.BlacklistToken(token);
+        String key =  CacheKeyFactory.blacklistToken(token);
         return getValue(key).map(val -> (String) val);
     }
 
     public void put(String token, long expirationMillis) {
         putValue(
-                CacheKeyFactory.BlacklistToken(token),
+                CacheKeyFactory.blacklistToken(token),
                 "true",
                 Duration.ofMillis(expirationMillis)
         );
@@ -35,7 +34,7 @@ public class BlacklistTokenCache extends AbstractCacheService {
 
     public boolean isBlacklisted(String token) {
         return Boolean.TRUE.equals(
-                redisTemplate.hasKey(CacheKeyFactory.BlacklistToken(token))
+                redisTemplate.hasKey(CacheKeyFactory.blacklistToken(token))
         );
     }
 

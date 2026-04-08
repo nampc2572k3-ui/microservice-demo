@@ -8,7 +8,7 @@ public class CacheKeyFactory {
         return PREFIX + "session:" + jti + ":" + accId;
     }
 
-    public static String BlacklistToken(String token) {
+    public static String blacklistToken(String token) {
         return PREFIX + "blacklist:" + token;
     }
 

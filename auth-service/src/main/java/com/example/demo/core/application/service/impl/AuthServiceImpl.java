@@ -2,6 +2,7 @@ package com.example.demo.core.application.service.impl;
 
 import com.example.demo.common.constant.ErrorCode;
 import com.example.demo.common.exception.CustomBusinessException;
+import com.example.demo.common.utils.ClientInfoUtils;
 import com.example.demo.core.application.cache.BlacklistTokenCache;
 import com.example.demo.core.application.cache.SessionCache;
 import com.example.demo.core.application.dto.request.LoginRequest;
@@ -96,7 +97,7 @@ public class AuthServiceImpl implements AuthService {
     @Transactional(rollbackFor = Exception.class)
     @Override
     public LoginResponse login(LoginRequest request, HttpServletRequest httpRequest) {
-        ClientInfoContext clientInfo = authHelper.extract(httpRequest);
+        ClientInfoContext clientInfo = ClientInfoUtils.extract(httpRequest);
 
         try {
             Authentication authentication = authenticationManager.authenticate(
@@ -148,7 +149,7 @@ public class AuthServiceImpl implements AuthService {
     public RefreshTokenResponse refreshToken(RefreshTokenRequest request, HttpServletRequest httpRequest) {
 
         String refreshToken = request.getRefreshToken();
-        ClientInfoContext clientInfo = authHelper.extract(httpRequest);
+        ClientInfoContext clientInfo = ClientInfoUtils.extract(httpRequest);
         String accId = jwtProvider.extractAccountId(refreshToken);
         String jti = jwtProvider.parseJti(refreshToken);
 
