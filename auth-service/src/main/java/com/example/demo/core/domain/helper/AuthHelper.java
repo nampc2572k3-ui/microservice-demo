@@ -5,6 +5,7 @@ import com.example.demo.common.exception.CustomBusinessException;
 import com.example.demo.core.application.cache.BlacklistTokenCache;
 import com.example.demo.core.application.cache.SessionCache;
 import com.example.demo.core.application.dto.request.LoginRequest;
+import com.example.demo.core.application.dto.response.common.TokenPairResponse;
 import com.example.demo.core.domain.model.entity.Account;
 import com.example.demo.core.domain.model.entity.AccountDevice;
 import com.example.demo.core.domain.model.entity.LoginAttempt;
@@ -12,10 +13,17 @@ import com.example.demo.core.domain.model.enums.Platform;
 import com.example.demo.core.persistence.AccountDeviceRepository;
 import com.example.demo.core.persistence.LoginAttemptRepository;
 import com.example.demo.infrastructure.context.ClientInfoContext;
+import com.example.demo.infrastructure.identity.UserDetailsImpl;
 import com.example.demo.infrastructure.jwt.JwtProvider;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,6 +42,8 @@ public class AuthHelper {
     private final BlacklistTokenCache blacklistTokenCache;
 
     private final JwtProvider jwtProvider;
+    private final PasswordEncoder passwordEncoder;
+    private final AuthenticationManager authenticationManager;
 
     @Transactional(rollbackFor = Exception.class)
     public AccountDevice handleAccountDevice(LoginRequest request, Account acc) {
@@ -112,6 +122,20 @@ public class AuthHelper {
             log.info("Detected IP change for JTI {}: {} -> {}",
                     jti, cachedInfo.clientIp(), clientInfo.clientIp());
         }
+    }
+
+    public UserDetails authenticate(LoginRequest request) {
+        Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(request.getIdentity(), request.getPassword()));
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        return (UserDetails) authentication.getPrincipal();
+    }
+
+    public TokenPairResponse buildToken(UserDetails userDetails) {
+        String accessToken = jwtProvider.generateAccessToken(userDetails);
+        String refreshToken = jwtProvider.generateRefreshToken(userDetails);
+
+        return TokenPairResponse.from(accessToken, refreshToken);
     }
 
 }

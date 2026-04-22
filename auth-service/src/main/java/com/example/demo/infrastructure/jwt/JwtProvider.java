@@ -109,14 +109,6 @@ public class JwtProvider {
         }
     }
 
-    public String extractUsername(String token) {
-        return extractClaim(token, Claims::getSubject);
-    }
-
-    public boolean isTokenExpired(String token) {
-        return extractClaim(token, Claims::getExpiration).before(new Date());
-    }
-
     public String extractAccountId(String token) {
         var raw = extractClaim(token, claims -> claims.get(CLAIM_ACCOUNT_ID));
         return raw != null ? raw.toString() : null;

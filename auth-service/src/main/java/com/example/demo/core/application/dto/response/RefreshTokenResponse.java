@@ -1,5 +1,6 @@
 package com.example.demo.core.application.dto.response;
 
+import com.example.demo.core.application.dto.response.common.TokenPairResponse;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
@@ -8,10 +9,6 @@ import lombok.Setter;
 @Setter
 @Builder
 public class RefreshTokenResponse {
-
-    private String accessToken;
-
-    private String refreshToken;
 
     private long accessExpiresIn;
 
@@ -22,5 +19,7 @@ public class RefreshTokenResponse {
     private String username;
 
     private String email;
+
+    private TokenPairResponse tokenPair;
 
 }

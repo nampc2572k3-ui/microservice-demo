@@ -26,9 +26,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -97,40 +94,29 @@ public class AuthServiceImpl implements AuthService {
     @Transactional(rollbackFor = Exception.class)
     @Override
     public LoginResponse login(LoginRequest request, HttpServletRequest httpRequest) {
+
         ClientInfoContext clientInfo = ClientInfoUtils.extract(httpRequest);
 
         try {
-            Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(request.getIdentity(), request.getPassword()));
-            SecurityContextHolder.getContext().setAuthentication(authentication);
-            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+            UserDetails userDetails = authHelper.authenticate(request);
             UserDetailsImpl customUser = (UserDetailsImpl) userDetails;
             Account acc = Objects.requireNonNull(customUser).getAccount();
 
+            var tokenPair = authHelper.buildToken(userDetails);
+
             AccountDevice device = authHelper.handleAccountDevice(request, acc);
 
-            String accessToken = jwtProvider.generateAccessToken(userDetails);
-            String refreshToken = jwtProvider.generateRefreshToken(userDetails);
-
             sessionCache.put(
-                    jwtProvider.parseJti(refreshToken), acc.getId(),
-                    device.getId(), clientInfo.userAgent(),
-                    clientInfo.clientIp()
-            );
+                    jwtProvider.parseJti(tokenPair.getRefreshToken()),
+                    acc.getId(), device.getId(), clientInfo.userAgent(),
+                    clientInfo.clientIp());
 
             // publish event login
             eventPublisher.publishEvent(new LoginSuccessTransactionalEvent(
-                            acc, refreshToken, device,  clientInfo.clientIp(), httpRequest, this
+                            this, acc, tokenPair.getRefreshToken(), device,  clientInfo.clientIp(), httpRequest
                     ));
 
-            return LoginResponse.builder()
-                    .accountId(acc.getId())
-                    .username(acc.getUsername())
-                    .email(acc.getEmail())
-                    .roles(customUser.getRoles())
-                    .accessToken(accessToken)
-                    .refreshToken(refreshToken)
-                    .build();
+            return LoginResponse.from(acc, tokenPair, customUser.getRoles());
 
         } catch (Exception e) {
             authHelper.recordLoginAttempt(request.getIdentity(), clientInfo.clientIp(), false, e.getMessage());
@@ -165,18 +151,16 @@ public class AuthServiceImpl implements AuthService {
                 .account(acc)
                 .build();
 
-        String newAccessToken = jwtProvider.generateAccessToken(userDetails);
-        String newRefreshToken = jwtProvider.generateRefreshToken(userDetails);
+        var newTokenPair = authHelper.buildToken(userDetails);
 
         sessionCache.put(
-                jwtProvider.parseJti(newRefreshToken), acc.getId(),
+                jwtProvider.parseJti(newTokenPair.getRefreshToken()), acc.getId(),
                 clientInfo.deviceId(), clientInfo.userAgent(),
                 clientInfo.clientIp()
         );
 
         return RefreshTokenResponse.builder()
-                .accessToken(newAccessToken)
-                .refreshToken(newRefreshToken)
+                .tokenPair(newTokenPair)
                 .username(acc.getUsername())
                 .email(acc.getEmail())
                 .accessExpiresIn(accessTokenExpirationMs)

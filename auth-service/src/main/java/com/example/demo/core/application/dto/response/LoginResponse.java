@@ -1,6 +1,7 @@
 package com.example.demo.core.application.dto.response;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
+import com.example.demo.core.application.dto.response.common.TokenPairResponse;
+import com.example.demo.core.domain.model.entity.Account;
 import lombok.*;
 
 import java.util.List;
@@ -17,6 +18,8 @@ public class LoginResponse {
     private String email;
 
     private List<RolePermissionResponse> roles;
+
+    private TokenPairResponse tokenPair;
 
     @NoArgsConstructor
     @AllArgsConstructor
@@ -39,11 +42,18 @@ public class LoginResponse {
     }
 
 
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    private String accessToken;
-
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    private String refreshToken;
-
+    public static LoginResponse from(
+            Account account,
+            TokenPairResponse tokenPair,
+            List<RolePermissionResponse> roles
+    ) {
+        return LoginResponse.builder()
+                .accountId(account.getId())
+                .username(account.getUsername())
+                .email(account.getEmail())
+                .roles(roles)
+                .tokenPair(tokenPair)
+                .build();
+    }
 
 }

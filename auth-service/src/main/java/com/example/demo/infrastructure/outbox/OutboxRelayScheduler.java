@@ -1,7 +1,6 @@
 package com.example.demo.infrastructure.outbox;
 
 import com.example.demo.core.domain.model.entity.OutboxEvent;
-import com.example.demo.core.domain.model.enums.OutboxStatus;
 import com.example.demo.core.persistence.OutboxEventRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.databind.ObjectMapper;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Component
@@ -20,7 +20,6 @@ import java.util.List;
 public class OutboxRelayScheduler {
 
     private static final int BATCH_SIZE = 100;
-    private static final int MAX_RETRY = 5;
 
     private final OutboxEventRepository outboxEventRepository;
 
@@ -29,28 +28,34 @@ public class OutboxRelayScheduler {
     private final ObjectMapper objectMapper;
 
     @Scheduled(fixedDelay = 5_000)
-    @Transactional(readOnly = true)
+    @Transactional(rollbackFor = Exception.class)
     public void relay() {
+        LocalDateTime now = LocalDateTime.now();
         List<OutboxEvent> events = outboxEventRepository.findPendingWithLock(BATCH_SIZE);
+
+        if (events.isEmpty()) {
+            return;
+        }
+
+        List<Long> sentIds = new ArrayList<>();
 
         for (OutboxEvent event : events) {
             try {
                 Object payload = objectMapper.readValue(event.getPayload(), Object.class);
                 kafkaTemplate.send(event.getTopic(), event.getPayloadKey(), payload).get();
-                event.setStatus(OutboxStatus.SENT);
-                event.setSentAt(LocalDateTime.now());
+
+                sentIds.add(event.getId());
+
             } catch (Exception ex) {
-                int retries = event.getRetryCount() + 1;
-                event.setRetryCount(retries);
-                if (retries >= MAX_RETRY) {
-                    event.setStatus(OutboxStatus.FAILED);
-                    log.error("Outbox event {} permanently failed after {} retries", event.getEventId(), retries);
-                } else {
-                    log.warn("Outbox event {} failed, retry {}/{}", event.getEventId(), retries, MAX_RETRY);
-                }
+                log.warn(
+                        "[OUTBOX] Kafka fail. Event {} sẽ retry sau 5s",
+                        event.getEventId(),
+                        ex
+                );
             }
         }
-    }
 
+        outboxEventRepository.markAsSent(sentIds, now);
+    }
 
 }

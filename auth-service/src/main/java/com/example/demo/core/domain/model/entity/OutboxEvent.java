@@ -27,9 +27,8 @@ public class OutboxEvent {
     private String payload;        // JSON serialized
 
     @Enumerated(EnumType.STRING)
-    private OutboxStatus status;   // PENDING, SENT, FAILED
+    private OutboxStatus status;   // PENDING, SENT
 
-    private int retryCount;
     private LocalDateTime createdAt;
     private LocalDateTime sentAt;
 
